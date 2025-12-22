@@ -1,25 +1,26 @@
 package com.example.shoplyandroid
 
-import android.content.Intent
-import android.net.Uri
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
 
-class ShoppingAdapter(private var items: List<ShoppingItem>) :
-    RecyclerView.Adapter<ShoppingAdapter.ShoppingViewHolder>() {
+class ShoppingAdapter(
+    private var items: MutableList<ShoppingItem>,
+    private val userListTitles: List<String>,
+    private val onAddClick: (ShoppingItem) -> Unit,
+    private val onVideoClick: (String) -> Unit
+) : RecyclerView.Adapter<ShoppingAdapter.ShoppingViewHolder>() {
 
-    // ViewHolder: מחזיק את הרכיבים הוויזואליים של כל שורה
     class ShoppingViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val title: TextView = view.findViewById(R.id.itemTitle)
-        val description: TextView = view.findViewById(R.id.itemDescription)
-        val image: ImageView = view.findViewById(R.id.itemImage)
+        val itemTitle: TextView = view.findViewById(R.id.itemTitle)
+        val itemDescription: TextView = view.findViewById(R.id.itemDescription)
         val btnPlay: ImageButton = view.findViewById(R.id.btnPlay)
+        val btnAddToList: Button = view.findViewById(R.id.btnAddToList)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ShoppingViewHolder {
@@ -29,29 +30,28 @@ class ShoppingAdapter(private var items: List<ShoppingItem>) :
 
     override fun onBindViewHolder(holder: ShoppingViewHolder, position: Int) {
         val item = items[position]
+        holder.itemTitle.text = item.title
+        holder.itemDescription.text = item.description
 
-        // הגדרת הטקסטים
-        holder.title.text = item.title
-        holder.description.text = item.description
-
-        // טעינת תמונה מהרשת בעזרת Glide [cite: 61]
-        Glide.with(holder.itemView.context)
-            .load(item.imageUrl)
-            .placeholder(android.R.drawable.ic_menu_report_image) // תמונה זמנית עד שהטעינה תסתיים
-            .into(holder.image)
-
-        // הפעלת וידאו בלחיצה על Play באמצעות Implicit Intent [cite: 56]
-        holder.btnPlay.setOnClickListener {
-            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(item.videoUrl))
-            holder.itemView.context.startActivity(intent)
+        // בדיקה האם המוצר כבר ברשימה
+        if (userListTitles.contains(item.title)) {
+            // מוצר נמצא ברשימה - הצגת V
+            holder.btnAddToList.text = "✓" // או שימוש באייקון אם תרצי בהמשך
+            holder.btnAddToList.setBackgroundColor(android.graphics.Color.LTGRAY)
+        } else {
+            // מוצר לא נמצא - הצגת +
+            holder.btnAddToList.text = "+"
+            holder.btnAddToList.setBackgroundColor(android.graphics.Color.parseColor("#4CAF50"))
         }
+
+        holder.btnAddToList.setOnClickListener { onAddClick(item) }
+        holder.btnPlay.setOnClickListener { onVideoClick(item.videoUrl) }
     }
 
     override fun getItemCount() = items.size
 
-    // פונקציה לעדכון הרשימה לאחר סינון או חיפוש [cite: 54, 55]
-    fun updateList(newList: List<ShoppingItem>) {
-        items = newList
+    fun updateList(newList: MutableList<ShoppingItem>) {
+        this.items = newList
         notifyDataSetChanged()
     }
 }
