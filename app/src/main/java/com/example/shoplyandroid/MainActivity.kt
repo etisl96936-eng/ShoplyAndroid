@@ -140,7 +140,7 @@ class MainActivity : AppCompatActivity() {
             ShoppingItem("בצל יבש", "רשת בצל", "פירות וירקות", "", ""),
 
             // מוצרי חלב
-            ShoppingItem("חלב 3%", "קרטון 1 ליטר", "מוצרי חלב", "", ""),
+            ShoppingItem("חלב 3%", "קרטון 1 ליטר", "מוצרי חלב", "https://www.rami-levy.co.il/_ipx/w_366,f_webp/https://img.rami-levy.co.il/product/7290114313865/small.jpg", ""),
             ShoppingItem("גבינה צהובה", "עמק 200 גרם", "מוצרי חלב", "", ""),
             ShoppingItem("יוגורט", "יוגורט יווני", "מוצרי חלב", "", ""),
             ShoppingItem("גבינה לבנה", "250 גרם", "מוצרי חלב", "", ""),
