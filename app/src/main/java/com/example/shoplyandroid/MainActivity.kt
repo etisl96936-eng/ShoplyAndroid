@@ -132,35 +132,35 @@ class MainActivity : AppCompatActivity() {
     private fun setupCatalog() {
         catalogItems = mutableListOf(
             // פירות וירקות
-            ShoppingItem("עגבנייה", "קילו עגבניות שרי", "פירות וירקות", "", "https://www.youtube.com/watch?v=dQw4w9WgXcQ"),
-            ShoppingItem("מלפפון", "מארז מלפפונים", "פירות וירקות", "", ""),
-            ShoppingItem("תפוח עץ", "פינק ליידי", "פירות וירקות", "", ""),
-            ShoppingItem("פלפל אדום", "גמבה טרי", "פירות וירקות", "", ""),
-            ShoppingItem("בננה", "מארז בננות", "פירות וירקות", "", ""),
-            ShoppingItem("בצל יבש", "רשת בצל", "פירות וירקות", "", ""),
+            ShoppingItem("עגבנייה", "קילו עגבניות שרי", "פירות וירקות", R.drawable.tomato, "https://www.youtube.com/watch?v=PTIxy8anmYM"),
+            ShoppingItem("מלפפון", "מארז מלפפונים", "פירות וירקות", R.drawable.cucumber, "https://www.youtube.com/watch?v=dvWiypj3W7s"),
+            ShoppingItem("תפוח עץ", "פינק ליידי", "פירות וירקות", R.drawable.apple, "https://www.youtube.com/watch?v=eBzTCbGnlWo"),
+            ShoppingItem("פלפל אדום", "גמבה טרי", "פירות וירקות", R.drawable.pepper, "https://www.youtube.com/shorts/jSCAoZ0bKHk"),
+            ShoppingItem("בננה", "מארז בננות", "פירות וירקות", R.drawable.banana, "https://www.youtube.com/shorts/QB9nqTjo0-M"),
+            ShoppingItem("בצל יבש", "רשת בצל", "פירות וירקות", R.drawable.onion, "https://www.youtube.com/shorts/XYwJYA4ggRc"),
 
             // מוצרי חלב
-            ShoppingItem("חלב 3%", "קרטון 1 ליטר", "מוצרי חלב", "https://www.rami-levy.co.il/_ipx/w_366,f_webp/https://img.rami-levy.co.il/product/7290114313865/small.jpg", ""),
-            ShoppingItem("גבינה צהובה", "עמק 200 גרם", "מוצרי חלב", "", ""),
-            ShoppingItem("יוגורט", "יוגורט יווני", "מוצרי חלב", "", ""),
-            ShoppingItem("גבינה לבנה", "250 גרם", "מוצרי חלב", "", ""),
-            ShoppingItem("קוטג'", "5% תנובה", "מוצרי חלב", "", ""),
-            ShoppingItem("חמאה", "200 גרם", "מוצרי חלב", "", ""),
+            ShoppingItem("חלב 3%", "קרטון 1 ליטר", "מוצרי חלב", R.drawable.milk, "https://www.youtube.com/watch?v=FXTOqgai13w"),
+            ShoppingItem("גבינה צהובה", "עמק 200 גרם", "מוצרי חלב", R.drawable.yelloecheese, "https://www.youtube.com/watch?v=GJ2Q4oHLbgo"),
+            ShoppingItem("יופלה", "יופלה שטוזים", "מוצרי חלב", R.drawable.yopaledelicacy, "https://www.youtube.com/watch?v=Pecoy9kXOQ0"),
+            ShoppingItem("גבינה לבנה", "250 גרם", "מוצרי חלב", R.drawable.curds, "https://www.youtube.com/watch?v=CA2-wEtZhKw"),
+            ShoppingItem("קוטג'", "5% תנובה", "מוצרי חלב", R.drawable.cottage, "https://www.youtube.com/watch?v=BffrD1dAIek"),
+            ShoppingItem("חמאה", "200 גרם", "מוצרי חלב", R.drawable.butter, "https://www.youtube.com/watch?v=sO1A_eW4Bdo"),
 
             // ניקיון
-            ShoppingItem("אקונומיקה", "נוזל ניקוי", "ניקיון", "", ""),
-            ShoppingItem("נוזל כלים", "750 מ\"ל", "ניקיון", "", ""),
-            ShoppingItem("נייר טואלט", "30 גלילים", "ניקיון", "", ""),
+            ShoppingItem("אקונומיקה", "נוזל ניקוי", "ניקיון", R.drawable.bleach, "https://www.youtube.com/watch?v=w_WER-bRsMM"),
+            ShoppingItem("נוזל כלים", "750 מ\"ל", "ניקיון", R.drawable.dishwashingliquid, "https://www.youtube.com/shorts/FFw_NPmyOk4"),
+            ShoppingItem("נייר טואלט", "30 גלילים", "ניקיון", R.drawable.toiletpaper, "https://www.youtube.com/watch?v=gv6KBSIOaAc"),
 
             // מאפה ודגנים
-            ShoppingItem("לחם פרוס", "לחם אחיד פרוס", "מאפה ודגנים", "", ""),
-            ShoppingItem("פיתות", "מארז 10 פיתות", "מאפה ודגנים", "", ""),
-            ShoppingItem("קורנפלקס", "דגני בוקר", "מאפה ודגנים", "", ""),
+            ShoppingItem("לחם מחמצת", "לחם מחמצת אנג'ל", "מאפה ודגנים", R.drawable.bread, "https://www.youtube.com/watch?v=MHh2I2o4bQQ"),
+            ShoppingItem("לחמניות", "מארז 6 לחמניות", "מאפה ודגנים", R.drawable.bun, "https://www.youtube.com/watch?v=uOjAmj2j8fo"),
+            ShoppingItem("קורנפלקס", "דגני בוקר", "מאפה ודגנים", R.drawable.korenflakes, "https://www.youtube.com/watch?v=4HfkAG56lr0"),
 
             // שימורים ומזווה
-            ShoppingItem("טונה", "מארז 4 קופסאות", "שימורים ומזווה", "", ""),
-            ShoppingItem("אורז פרסי", "1 קילו", "שימורים ומזווה", "", ""),
-            ShoppingItem("פסטה פנה", "500 גרם", "שימורים ומזווה", "", "")
+            ShoppingItem("טונה", "מארז 4 קופסאות", "שימורים ומזווה", R.drawable.tuna, "https://www.youtube.com/watch?v=O7QY9oH4S5c"),
+            ShoppingItem("אורז פרסי", "1 קילו", "שימורים ומזווה", R.drawable.rice, "https://www.youtube.com/watch?v=GA9ljFbE004"),
+            ShoppingItem("פסטה", "500 גרם", "שימורים ומזווה", R.drawable.pasta, "https://www.youtube.com/watch?v=1G0sivf2LU8")
         )
     }
 }

@@ -4,6 +4,6 @@ data class ShoppingItem(
     val title: String,
     val description: String,
     val category: String,
-    val imageUrl: String,
+    val imageRes: Int,
     val videoUrl: String
 )

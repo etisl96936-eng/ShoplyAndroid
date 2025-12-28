@@ -19,6 +19,9 @@ class ShoppingAdapter(
     class ShoppingViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val itemTitle: TextView = view.findViewById(R.id.itemTitle)
         val itemDescription: TextView = view.findViewById(R.id.itemDescription)
+
+        val itemImage: ImageView = view.findViewById(R.id.itemImage) // ✅ להוסיף
+
         val btnPlay: ImageButton = view.findViewById(R.id.btnPlay)
         val btnAddToList: Button = view.findViewById(R.id.btnAddToList)
     }
@@ -32,6 +35,7 @@ class ShoppingAdapter(
         val item = items[position]
         holder.itemTitle.text = item.title
         holder.itemDescription.text = item.description
+        holder.itemImage.setImageResource(item.imageRes)
 
         // בדיקה האם המוצר כבר ברשימה
         if (userListTitles.contains(item.title)) {
