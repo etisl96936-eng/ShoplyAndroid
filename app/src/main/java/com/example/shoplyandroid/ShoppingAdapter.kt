@@ -1,4 +1,4 @@
-package com.example.shoplyandroid
+package com.example.shoplyandroid // שינוי חבילה
 
 import android.view.LayoutInflater
 import android.view.View
@@ -8,54 +8,49 @@ import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 
 class ShoppingAdapter(
-    private var items: MutableList<ShoppingItem>,
-    private val userListTitles: List<String>,
+    private var items: List<ShoppingItem>,
+    private val selectedItemsNames: List<String>,
     private val onAddClick: (ShoppingItem) -> Unit,
-    private val onVideoClick: (String) -> Unit
-) : RecyclerView.Adapter<ShoppingAdapter.ShoppingViewHolder>() {
+    private val onVideoClick: (String) -> Unit,
+    private val onDeleteClick: (Int) -> Unit
+) : RecyclerView.Adapter<ShoppingAdapter.ViewHolder>() {
 
-    class ShoppingViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val itemTitle: TextView = view.findViewById(R.id.itemTitle)
-        val itemDescription: TextView = view.findViewById(R.id.itemDescription)
-
-        val itemImage: ImageView = view.findViewById(R.id.itemImage) // ✅ להוסיף
-
+    class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        val ivProduct: ImageView = view.findViewById(R.id.itemImage)
+        val tvTitle: TextView = view.findViewById(R.id.itemTitle)
+        val tvDescription: TextView = view.findViewById(R.id.itemDescription)
         val btnPlay: ImageButton = view.findViewById(R.id.btnPlay)
-        val btnAddToList: Button = view.findViewById(R.id.btnAddToList)
+        val btnDelete: ImageButton = view.findViewById(R.id.btnDelete)
+        val btnAdd: Button = view.findViewById(R.id.btnAddToList)
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ShoppingViewHolder {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.item_shopping, parent, false)
-        return ShoppingViewHolder(view)
+        return ViewHolder(view)
     }
 
-    override fun onBindViewHolder(holder: ShoppingViewHolder, position: Int) {
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = items[position]
-        holder.itemTitle.text = item.title
-        holder.itemDescription.text = item.description
-        holder.itemImage.setImageResource(item.imageRes)
+        holder.tvTitle.text = item.title
+        holder.tvDescription.text = item.description
 
-        // בדיקה האם המוצר כבר ברשימה
-        if (userListTitles.contains(item.title)) {
-            // מוצר נמצא ברשימה - הצגת V
-            holder.btnAddToList.text = "✓" // או שימוש באייקון אם תרצי בהמשך
-            holder.btnAddToList.setBackgroundColor(android.graphics.Color.LTGRAY)
+        if (!item.imageUrl.isNullOrEmpty()) {
+            Glide.with(holder.itemView.context)
+                .load(item.imageUrl)
+                .placeholder(android.R.drawable.ic_menu_gallery)
+                .error(android.R.drawable.ic_dialog_alert)
+                .into(holder.ivProduct)
         } else {
-            // מוצר לא נמצא - הצגת +
-            holder.btnAddToList.text = "+"
-            holder.btnAddToList.setBackgroundColor(android.graphics.Color.parseColor("#4CAF50"))
+            holder.ivProduct.setImageResource(item.imageRes)
         }
 
-        holder.btnAddToList.setOnClickListener { onAddClick(item) }
+        holder.btnAdd.setOnClickListener { onAddClick(item) } // הוספת הלוגיקה לכפתור ה- "+"
         holder.btnPlay.setOnClickListener { onVideoClick(item.videoUrl) }
+        holder.btnDelete.setOnClickListener { onDeleteClick(position) }
     }
 
     override fun getItemCount() = items.size
-
-    fun updateList(newList: MutableList<ShoppingItem>) {
-        this.items = newList
-        notifyDataSetChanged()
-    }
 }

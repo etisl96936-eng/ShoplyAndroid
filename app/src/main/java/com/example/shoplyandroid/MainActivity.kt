@@ -10,7 +10,8 @@ import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-
+import com.example.shoplyandroid.ShoppingItem
+import com.example.shoplyandroid.ShoppingAdapter
 class MainActivity : AppCompatActivity() {
 
     private lateinit var adapter: ShoppingAdapter
@@ -97,17 +98,39 @@ class MainActivity : AppCompatActivity() {
             userShoppingList.add(item)
             Toast.makeText(this, "${item.title} נוסף לרשימה", Toast.LENGTH_SHORT).show()
 
-            // ניקוי טקסט החיפוש (אבל נשארים באותה קטגוריה)
+            // ניקוי טקסט החיפוש
             if (etSearch.text.isNotEmpty()) {
                 etSearch.setText("")
             }
         }
 
-        // עדכון כמות המוצרים על הכפתור העליון
+        updateListButtonCounter()
+        applyFilter()
+    }
+
+    // פונקציה חדשה לטיפול במחיקה מהקטלוג (בונוס)
+    private fun deleteProductFromSystem(position: Int, currentList: MutableList<ShoppingItem>) {
+        val itemToDelete = currentList[position]
+
+        // 1. הסרה מהרשימה שמוצגת כרגע
+        currentList.removeAt(position)
+
+        // 2. הסרה מהקטלוג הראשי (כדי שלא יחזור בחיפוש)
+        catalogItems.removeAll { it.title == itemToDelete.title }
+
+        // 3. הסרה מרשימת הקניות של המשתמש אם הוא נמצא שם
+        userShoppingList.removeAll { it.title == itemToDelete.title }
+
+        // 4. עדכון התצוגה
+        adapter.notifyItemRemoved(position)
+        updateListButtonCounter()
+
+        Toast.makeText(this, "${itemToDelete.title} נמחק מהמערכת", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun updateListButtonCounter() {
         val btnViewList = findViewById<Button>(R.id.btnViewList)
         btnViewList.text = "צפה ברשימת הקניות שלי (${userShoppingList.size} מוצרים)"
-
-        applyFilter() // ריענון התצוגה (מעדכן צבעים/סימונים)
     }
 
     private fun openVideo(url: String) {
@@ -122,45 +145,38 @@ class MainActivity : AppCompatActivity() {
     private fun updateAdapter(newList: MutableList<ShoppingItem>) {
         adapter = ShoppingAdapter(
             newList,
-            userShoppingList.map { it.title }, // רשימת שמות לבדיקת V
-            { item -> toggleProduct(item) },  // פונקציית הוספה/הסרה
-            { url -> openVideo(url) }          // פונקציית וידאו
+            userShoppingList.map { it.title },
+            { item: ShoppingItem -> toggleProduct(item) }, // הוספת : ShoppingItem
+            { url: String -> openVideo(url) },             // הוספת : String
+            { position: Int -> deleteProductFromSystem(position, newList) } // הוספת : Int
         )
         recyclerView.adapter = adapter
     }
 
     private fun setupCatalog() {
+        // כאן השארתי את הרשימה שלך כפי שהיא, רק הוספתי את האפשרות ל-imageUrl בעתיד
         catalogItems = mutableListOf(
-            // פירות וירקות
-            ShoppingItem("עגבנייה", "קילו עגבניות שרי", "פירות וירקות", R.drawable.tomato, "https://www.youtube.com/watch?v=PTIxy8anmYM"),
-            ShoppingItem("מלפפון", "מארז מלפפונים", "פירות וירקות", R.drawable.cucumber, "https://www.youtube.com/watch?v=dvWiypj3W7s"),
-            ShoppingItem("תפוח עץ", "פינק ליידי", "פירות וירקות", R.drawable.apple, "https://www.youtube.com/watch?v=eBzTCbGnlWo"),
-            ShoppingItem("פלפל אדום", "גמבה טרי", "פירות וירקות", R.drawable.pepper, "https://www.youtube.com/shorts/jSCAoZ0bKHk"),
-            ShoppingItem("בננה", "מארז בננות", "פירות וירקות", R.drawable.banana, "https://www.youtube.com/shorts/QB9nqTjo0-M"),
-            ShoppingItem("בצל יבש", "רשת בצל", "פירות וירקות", R.drawable.onion, "https://www.youtube.com/shorts/XYwJYA4ggRc"),
-
-            // מוצרי חלב
-            ShoppingItem("חלב 3%", "קרטון 1 ליטר", "מוצרי חלב", R.drawable.milk, "https://www.youtube.com/watch?v=FXTOqgai13w"),
-            ShoppingItem("גבינה צהובה", "עמק 200 גרם", "מוצרי חלב", R.drawable.yelloecheese, "https://www.youtube.com/watch?v=GJ2Q4oHLbgo"),
-            ShoppingItem("יופלה", "יופלה שטוזים", "מוצרי חלב", R.drawable.yopaledelicacy, "https://www.youtube.com/watch?v=Pecoy9kXOQ0"),
-            ShoppingItem("גבינה לבנה", "250 גרם", "מוצרי חלב", R.drawable.curds, "https://www.youtube.com/watch?v=CA2-wEtZhKw"),
-            ShoppingItem("קוטג'", "5% תנובה", "מוצרי חלב", R.drawable.cottage, "https://www.youtube.com/watch?v=BffrD1dAIek"),
-            ShoppingItem("חמאה", "200 גרם", "מוצרי חלב", R.drawable.butter, "https://www.youtube.com/watch?v=sO1A_eW4Bdo"),
-
-            // ניקיון
-            ShoppingItem("אקונומיקה", "נוזל ניקוי", "ניקיון", R.drawable.bleach, "https://www.youtube.com/watch?v=w_WER-bRsMM"),
-            ShoppingItem("נוזל כלים", "750 מ\"ל", "ניקיון", R.drawable.dishwashingliquid, "https://www.youtube.com/shorts/FFw_NPmyOk4"),
-            ShoppingItem("נייר טואלט", "30 גלילים", "ניקיון", R.drawable.toiletpaper, "https://www.youtube.com/watch?v=gv6KBSIOaAc"),
-
-            // מאפה ודגנים
-            ShoppingItem("לחם מחמצת", "לחם מחמצת אנג'ל", "מאפה ודגנים", R.drawable.bread, "https://www.youtube.com/watch?v=MHh2I2o4bQQ"),
-            ShoppingItem("לחמניות", "מארז 6 לחמניות", "מאפה ודגנים", R.drawable.bun, "https://www.youtube.com/watch?v=uOjAmj2j8fo"),
-            ShoppingItem("קורנפלקס", "דגני בוקר", "מאפה ודגנים", R.drawable.korenflakes, "https://www.youtube.com/watch?v=4HfkAG56lr0"),
-
-            // שימורים ומזווה
-            ShoppingItem("טונה", "מארז 4 קופסאות", "שימורים ומזווה", R.drawable.tuna, "https://www.youtube.com/watch?v=O7QY9oH4S5c"),
-            ShoppingItem("אורז פרסי", "1 קילו", "שימורים ומזווה", R.drawable.rice, "https://www.youtube.com/watch?v=GA9ljFbE004"),
-            ShoppingItem("פסטה", "500 גרם", "שימורים ומזווה", R.drawable.pasta, "https://www.youtube.com/watch?v=1G0sivf2LU8")
+            ShoppingItem("עגבנייה", "קילו עגבניות שרי", "פירות וירקות", R.drawable.tomato, null, "https://www.youtube.com/watch?v=PTIxy8anmYM"),
+            ShoppingItem("מלפפון", "מארז מלפפונים", "פירות וירקות", R.drawable.cucumber, null, "https://www.youtube.com/watch?v=dvWiypj3W7s"),
+            ShoppingItem("תפוח עץ", "פינק ליידי", "פירות וירקות", R.drawable.apple, null, "https://www.youtube.com/watch?v=eBzTCbGnlWo"),
+            ShoppingItem("פלפל אדום", "גמבה טרי", "פירות וירקות", R.drawable.pepper, null, "https://www.youtube.com/shorts/jSCAoZ0bKHk"),
+            ShoppingItem("בננה", "מארז בננות", "פירות וירקות", R.drawable.banana, null, "https://www.youtube.com/shorts/QB9nqTjo0-M"),
+            ShoppingItem("בצל יבש", "רשת בצל", "פירות וירקות", R.drawable.onion, null, "https://www.youtube.com/shorts/XYwJYA4ggRc"),
+            ShoppingItem("חלב 3%", "קרטון 1 ליטר", "מוצרי חלב", R.drawable.milk, null, "https://www.youtube.com/watch?v=FXTOqgai13w"),
+            ShoppingItem("גבינה צהובה", "עמק 200 גרם", "מוצרי חלב", R.drawable.yelloecheese, null, "https://www.youtube.com/watch?v=GJ2Q4oHLbgo"),
+            ShoppingItem("יופלה", "יופלה שטוזים", "מוצרי חלב", R.drawable.yopaledelicacy, null, "https://www.youtube.com/watch?v=Pecoy9kXOQ0"),
+            ShoppingItem("גבינה לבנה", "250 גרם", "מוצרי חלב", R.drawable.curds, null, "https://www.youtube.com/watch?v=CA2-wEtZhKw"),
+            ShoppingItem("קוטג'", "5% תנובה", "מוצרי חלב", R.drawable.cottage, null, "https://www.youtube.com/watch?v=BffrD1dAIek"),
+            ShoppingItem("חמאה", "200 גרם", "מוצרי חלב", R.drawable.butter, null, "https://www.youtube.com/watch?v=sO1A_eW4Bdo"),
+            ShoppingItem("אקונומיקה", "נוזל ניקוי", "ניקיון", R.drawable.bleach, null, "https://www.youtube.com/watch?v=w_WER-bRsMM"),
+            ShoppingItem("נוזל כלים", "750 מ\"ל", "ניקיון", R.drawable.dishwashingliquid, null, "https://www.youtube.com/shorts/FFw_NPmyOk4"),
+            ShoppingItem("נייר טואלט", "30 גלילים", "ניקיון", R.drawable.toiletpaper, null, "https://www.youtube.com/watch?v=gv6KBSIOaAc"),
+            ShoppingItem("לחם מחמצת", "לחם מחמצת אנג'ל", "מאפה ודגנים", R.drawable.bread, null, "https://www.youtube.com/watch?v=MHh2I2o4bQQ"),
+            ShoppingItem("לחמניות", "מארז 6 לחמניות", "מאפה ודגנים", R.drawable.bun, null, "https://www.youtube.com/watch?v=uOjAmj2j8fo"),
+            ShoppingItem("קורנפלקס", "דגני בוקר", "מאפה ודגנים", R.drawable.korenflakes, null, "https://www.youtube.com/watch?v=4HfkAG56lr0"),
+            ShoppingItem("טונה", "מארז 4 קופסאות", "שימורים ומזווה", R.drawable.tuna, null, "https://www.youtube.com/watch?v=O7QY9oH4S5c"),
+            ShoppingItem("אורז פרסי", "1 קילו", "שימורים ומזווה", R.drawable.rice, null, "https://www.youtube.com/watch?v=GA9ljFbE004"),
+            ShoppingItem("פסטה", "500 גרם", "שימורים ומזווה", R.drawable.pasta, null, "https://www.youtube.com/watch?v=1G0sivf2LU8")
         )
     }
 }
