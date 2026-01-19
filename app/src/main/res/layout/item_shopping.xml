@@ -10,9 +10,9 @@
 
     <ImageView
         android:id="@+id/itemImage"
-        android:layout_width="27dp"
-        android:layout_height="141dp"
-        android:layout_weight="1"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:layout_weight="0"
         app:srcCompat="@drawable/milk" />
 
     <LinearLayout
@@ -46,12 +46,20 @@
 
     <Button
         android:id="@+id/btnAddToList"
-        android:layout_width="wrap_content"
+        android:layout_width="48dp"
         android:layout_height="wrap_content"
         android:backgroundTint="#4CAF50"
-        android:minWidth="48dp"
         android:text="+"
         android:textColor="@android:color/white"
         android:textSize="20sp" />
+
+    <ImageButton
+        android:id="@+id/btnDelete"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginStart="8dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@android:drawable/ic_menu_delete"
+        app:tint="#F44336" />
 
 </LinearLayout>

@@ -1,5 +1,5 @@
 package com.example.shoplyandroid
-
+import com.example.shoplyandroid.R
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -29,11 +29,9 @@ class MainActivity : AppCompatActivity() {
             val isDelete = data?.getBooleanExtra("IS_DELETE", false) ?: false
 
             if (isDelete) {
-                // לוגיקה של מחיקה
                 val titleToDelete = data?.getStringExtra("DELETED_PRODUCT_TITLE")
                 catalogItems.removeAll { it.title == titleToDelete }
                 userShoppingList.removeAll { it.title == titleToDelete }
-
                 Toast.makeText(this, "המוצר נמחק מהמערכת", Toast.LENGTH_SHORT).show()
             } else {
                 // 2. לוגיקה של הוספה או עדכון
@@ -42,23 +40,19 @@ class MainActivity : AppCompatActivity() {
                     val existingIndex = catalogItems.indexOfFirst { it.title == item.title }
 
                     if (existingIndex != -1) {
-                        // עדכון מוצר קיים - כאן הוספנו את ה-Toast לעדכון
                         catalogItems[existingIndex] = item
                         Toast.makeText(this, "המוצר '${item.title}' עודכן בהצלחה!", Toast.LENGTH_SHORT).show()
                     } else {
-                        // הוספת מוצר חדש - כאן ה-Toast להוספה
                         catalogItems.add(0, item)
                         Toast.makeText(this, "מוצר חדש נוסף בהצלחה!", Toast.LENGTH_SHORT).show()
                     }
                 }
             }
 
-            // 3. שמירה ורענון
             saveItemsToDisk()
             applyFilter()
         }
     }
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -79,14 +73,14 @@ class MainActivity : AppCompatActivity() {
         val spinnerCategory = findViewById<Spinner>(R.id.spinnerCategory)
         val btnViewList = findViewById<Button>(R.id.btnViewList)
 
-        // הגדרת הספינר - ודאי שהשמות כאן תואמים בדיוק למה שיש ב-AdminActivity
+        // הגדרת הספינר
         val categories = arrayOf("הכל", "פירות וירקות", "מוצרי חלב וביצים", "ניקיון", "מאפה ודגנים", "שימורים ומזווה", "בשר ודגים")
         val spinnerAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, categories)
         spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         spinnerCategory.adapter = spinnerAdapter
 
         recyclerView.layoutManager = LinearLayoutManager(this)
-        updateAdapter(catalogItems) // התחלה עם הצגת הקטלוג
+        updateAdapter(catalogItems)
 
         // מאזיני חיפוש וסינון
         etSearch.addTextChangedListener(object : TextWatcher {
@@ -105,7 +99,7 @@ class MainActivity : AppCompatActivity() {
         btnViewList.setOnClickListener {
             etSearch.setText("")
             spinnerCategory.setSelection(0)
-            updateAdapter(userShoppingList) // הצגת הרשימה האישית בלבד
+            updateAdapter(userShoppingList)
             Toast.makeText(this, "מציג את רשימת התכנון שלך", Toast.LENGTH_SHORT).show()
         }
     }
@@ -157,7 +151,6 @@ class MainActivity : AppCompatActivity() {
 
         val btnViewList = findViewById<Button>(R.id.btnViewList)
         btnViewList.text = "צפה ברשימת הקניות שלי (${userShoppingList.size} מוצרים)"
-        // לא קוראים ל-applyFilter כאן כדי לא לקפוץ חזרה לקטלוג באמצע עבודה
         adapter.notifyDataSetChanged()
     }
 
@@ -189,31 +182,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupInitialCatalog() {
         catalogItems = mutableListOf(
-            ShoppingItem(
-                "עגבנייה",
-                "קילו עגבניות שרי",
-                "פירות וירקות",
-                "https://upload.wikimedia.org/wikipedia/commons/8/89/Tomato_je.jpg", // קישור לתמונה
-                "https://www.youtube.com/watch?v=PTIxy8anmYM",
-                0
-            ),
-            ShoppingItem(
-                "חלב 3%",
-                "קרטון 1 ליטר",
-                "מוצרי חלב וביצים",
-                "https://p2.piqsels.com/preview/630/562/591/milk-bottle-glass-bottle-milk-bottle.jpg", // קישור לתמונה
-                "https://www.youtube.com/watch?v=FXTOqgai13w",
-                0
-            ),
-            ShoppingItem(
-                "לחם פרוס",
-                "חיטה מלאה",
-                "מאפה ודגנים",
-                "https://cdn.pixabay.com/photo/2014/07/22/09/59/bread-399286_1280.jpg", // קישור לתמונה
-                "",
-                0
-            )
+            ShoppingItem("עגבנייה", "קילו עגבניות שרי", "פירות וירקות", "https://upload.wikimedia.org/wikipedia/commons/8/89/Tomato_je.jpg", "https://www.youtube.com/watch?v=PTIxy8anmYM", 0),
+            ShoppingItem("חלב 3%", "קרטון 1 ליטר", "מוצרי חלב וביצים", "https://p2.piqsels.com/preview/630/562/591/milk-bottle-glass-bottle-milk-bottle.jpg", "https://www.youtube.com/watch?v=FXTOqgai13w", 0),
+            ShoppingItem("לחם פרוס", "חיטה מלאה", "מאפה ודגנים", "https://cdn.pixabay.com/photo/2014/07/22/09/59/bread-399286_1280.jpg", "", 0)
         )
-        saveItemsToDisk() // שמירה לדיסק כדי שהשינויים יישמרו
+        saveItemsToDisk()
     }
 }
