@@ -8,20 +8,20 @@ import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide // ספריה להצגת תמונות מהאינטרנט
 
 class ShoppingAdapter(
-    private var items: MutableList<ShoppingItem>,
-    private val userListTitles: List<String>,
-    private val onAddClick: (ShoppingItem) -> Unit,
-    private val onVideoClick: (String) -> Unit
+    private var items: List<ShoppingItem>, // שיניתי ל-var כדי לאפשר עדכון
+    private val userTitles: List<String>,
+    private val onClick: (ShoppingItem) -> Unit,
+    private val onVideoClick: (String) -> Unit,
+    private val onLongClick: (ShoppingItem) -> Unit
 ) : RecyclerView.Adapter<ShoppingAdapter.ShoppingViewHolder>() {
 
     class ShoppingViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val itemTitle: TextView = view.findViewById(R.id.itemTitle)
         val itemDescription: TextView = view.findViewById(R.id.itemDescription)
-
-        val itemImage: ImageView = view.findViewById(R.id.itemImage) // ✅ להוסיף
-
+        val itemImage: ImageView = view.findViewById(R.id.itemImage)
         val btnPlay: ImageButton = view.findViewById(R.id.btnPlay)
         val btnAddToList: Button = view.findViewById(R.id.btnAddToList)
     }
@@ -35,26 +35,36 @@ class ShoppingAdapter(
         val item = items[position]
         holder.itemTitle.text = item.title
         holder.itemDescription.text = item.description
-        holder.itemImage.setImageResource(item.imageRes)
 
-        // בדיקה האם המוצר כבר ברשימה
-        if (userListTitles.contains(item.title)) {
-            // מוצר נמצא ברשימה - הצגת V
-            holder.btnAddToList.text = "✓" // או שימוש באייקון אם תרצי בהמשך
+        // שימוש ב-Glide להצגת התמונה מה-URL שהוספת ב-Admin
+        Glide.with(holder.itemView.context)
+            .load(item.imageUrl)
+            .placeholder(android.R.drawable.ic_menu_report_image)
+            .into(holder.itemImage)
+
+        // לחיצה ארוכה לעריכה - הפונקציה שביקשת
+        holder.itemView.setOnLongClickListener {
+            onLongClick(item)
+            true
+        }
+
+        // בדיקה האם המוצר כבר ברשימה - שימוש בשם המשתנה הנכון userTitles
+        if (userTitles.contains(item.title)) {
+            holder.btnAddToList.text = "✓"
             holder.btnAddToList.setBackgroundColor(android.graphics.Color.LTGRAY)
         } else {
-            // מוצר לא נמצא - הצגת +
             holder.btnAddToList.text = "+"
             holder.btnAddToList.setBackgroundColor(android.graphics.Color.parseColor("#4CAF50"))
         }
 
-        holder.btnAddToList.setOnClickListener { onAddClick(item) }
+        holder.btnAddToList.setOnClickListener { onClick(item) }
         holder.btnPlay.setOnClickListener { onVideoClick(item.videoUrl) }
     }
 
     override fun getItemCount() = items.size
 
-    fun updateList(newList: MutableList<ShoppingItem>) {
+    // פונקציה לעדכון הרשימה
+    fun updateList(newList: List<ShoppingItem>) {
         this.items = newList
         notifyDataSetChanged()
     }

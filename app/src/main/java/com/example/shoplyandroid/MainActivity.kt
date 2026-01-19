@@ -10,6 +10,8 @@ import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 
 class MainActivity : AppCompatActivity() {
 
@@ -18,35 +20,81 @@ class MainActivity : AppCompatActivity() {
     private var userShoppingList: MutableList<ShoppingItem> = mutableListOf()
     private lateinit var recyclerView: RecyclerView
 
+    // לאונצ'ר לקבלת נתונים מה-AdminActivity
+    private val startAdminActivity = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == RESULT_OK) {
+            val data = result.data
+
+            // 1. בדיקה האם המשתמש לחץ על "מחק"
+            val isDelete = data?.getBooleanExtra("IS_DELETE", false) ?: false
+
+            if (isDelete) {
+                // לוגיקה של מחיקה
+                val titleToDelete = data?.getStringExtra("DELETED_PRODUCT_TITLE")
+                catalogItems.removeAll { it.title == titleToDelete }
+                userShoppingList.removeAll { it.title == titleToDelete }
+
+                Toast.makeText(this, "המוצר נמחק מהמערכת", Toast.LENGTH_SHORT).show()
+            } else {
+                // 2. לוגיקה של הוספה או עדכון
+                val returnedItem = data?.getSerializableExtra("NEW_PRODUCT") as? ShoppingItem
+                returnedItem?.let { item ->
+                    val existingIndex = catalogItems.indexOfFirst { it.title == item.title }
+
+                    if (existingIndex != -1) {
+                        // עדכון מוצר קיים - כאן הוספנו את ה-Toast לעדכון
+                        catalogItems[existingIndex] = item
+                        Toast.makeText(this, "המוצר '${item.title}' עודכן בהצלחה!", Toast.LENGTH_SHORT).show()
+                    } else {
+                        // הוספת מוצר חדש - כאן ה-Toast להוספה
+                        catalogItems.add(0, item)
+                        Toast.makeText(this, "מוצר חדש נוסף בהצלחה!", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+
+            // 3. שמירה ורענון
+            saveItemsToDisk()
+            applyFilter()
+        }
+    }
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        setupCatalog()
+        // כפתור הפלוס למעבר למסך ניהול
+        val fabAddProduct = findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.fabAddProduct)
+        fabAddProduct.setOnClickListener {
+            val intent = Intent(this, AdminActivity::class.java)
+            startAdminActivity.launch(intent)
+        }
+
+        // טעינת נתונים
+        loadItemsFromDisk()
 
         recyclerView = findViewById(R.id.recyclerView)
         val etSearch = findViewById<EditText>(R.id.etSearch)
         val spinnerCategory = findViewById<Spinner>(R.id.spinnerCategory)
         val btnViewList = findViewById<Button>(R.id.btnViewList)
 
-        // 1. הגדרת הספינר עם כל הקטגוריות
-        val categories = arrayOf("הכל", "פירות וירקות", "מוצרי חלב", "ניקיון", "מאפה ודגנים", "שימורים ומזווה")
+        // הגדרת הספינר - ודאי שהשמות כאן תואמים בדיוק למה שיש ב-AdminActivity
+        val categories = arrayOf("הכל", "פירות וירקות", "מוצרי חלב וביצים", "ניקיון", "מאפה ודגנים", "שימורים ומזווה", "בשר ודגים")
         val spinnerAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, categories)
         spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         spinnerCategory.adapter = spinnerAdapter
 
-        // 2. הגדרת ה-RecyclerView
         recyclerView.layoutManager = LinearLayoutManager(this)
-        updateAdapter(userShoppingList)
+        updateAdapter(catalogItems) // התחלה עם הצגת הקטלוג
 
-        // 3. האזנה לחיפוש טקסטואלי
+        // מאזיני חיפוש וסינון
         etSearch.addTextChangedListener(object : TextWatcher {
             override fun afterTextChanged(s: Editable?) { applyFilter() }
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
         })
 
-        // 4. האזנה לבחירת קטגוריה
         spinnerCategory.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 applyFilter()
@@ -54,12 +102,30 @@ class MainActivity : AppCompatActivity() {
             override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
 
-        // 5. כפתור צפייה ברשימה המתוכננת (איפוס מסננים)
         btnViewList.setOnClickListener {
             etSearch.setText("")
             spinnerCategory.setSelection(0)
-            applyFilter()
+            updateAdapter(userShoppingList) // הצגת הרשימה האישית בלבד
             Toast.makeText(this, "מציג את רשימת התכנון שלך", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun saveItemsToDisk() {
+        val sharedPreferences = getSharedPreferences("ShoplyPrefs", MODE_PRIVATE)
+        val editor = sharedPreferences.edit()
+        val json = Gson().toJson(catalogItems)
+        editor.putString("saved_catalog", json)
+        editor.apply()
+    }
+
+    private fun loadItemsFromDisk() {
+        val sharedPreferences = getSharedPreferences("ShoplyPrefs", MODE_PRIVATE)
+        val json = sharedPreferences.getString("saved_catalog", null)
+        if (json != null) {
+            val type = object : TypeToken<MutableList<ShoppingItem>>() {}.type
+            catalogItems = Gson().fromJson(json, type)
+        } else {
+            setupInitialCatalog()
         }
     }
 
@@ -70,44 +136,29 @@ class MainActivity : AppCompatActivity() {
         val query = etSearch.text.toString().trim().lowercase()
         val selectedCat = spinnerCategory.selectedItem?.toString() ?: "הכל"
 
-        if (query.isEmpty() && selectedCat == "הכל") {
-            // מציג רק את מה שהמשתמש בחר לתכנון
-            updateAdapter(userShoppingList)
-        } else {
-            // מציג הצעות מהקטלוג לפי סינון
-            val suggestions = catalogItems.filter { item ->
-                val matchesQuery = item.title.lowercase().contains(query)
-                val matchesCat = selectedCat == "הכל" || item.category == selectedCat
-                matchesQuery && matchesCat
-            }.toMutableList()
-            updateAdapter(suggestions)
-        }
+        val filteredList = catalogItems.filter { item ->
+            val matchesQuery = item.title.lowercase().contains(query)
+            val matchesCat = selectedCat == "הכל" || item.category == selectedCat
+            matchesQuery && matchesCat
+        }.toMutableList()
+
+        updateAdapter(filteredList)
     }
 
     private fun toggleProduct(item: ShoppingItem) {
-        val existingItem = userShoppingList.find { it.title == item.title }
-        val etSearch = findViewById<EditText>(R.id.etSearch)
-
-        if (existingItem != null) {
-            // הסרה מהרשימה
-            userShoppingList.remove(existingItem)
+        val index = userShoppingList.indexOfFirst { it.title == item.title }
+        if (index != -1) {
+            userShoppingList.removeAt(index)
             Toast.makeText(this, "${item.title} הוסר מהרשימה", Toast.LENGTH_SHORT).show()
         } else {
-            // הוספה לרשימה
             userShoppingList.add(item)
             Toast.makeText(this, "${item.title} נוסף לרשימה", Toast.LENGTH_SHORT).show()
-
-            // ניקוי טקסט החיפוש (אבל נשארים באותה קטגוריה)
-            if (etSearch.text.isNotEmpty()) {
-                etSearch.setText("")
-            }
         }
 
-        // עדכון כמות המוצרים על הכפתור העליון
         val btnViewList = findViewById<Button>(R.id.btnViewList)
         btnViewList.text = "צפה ברשימת הקניות שלי (${userShoppingList.size} מוצרים)"
-
-        applyFilter() // ריענון התצוגה (מעדכן צבעים/סימונים)
+        // לא קוראים ל-applyFilter כאן כדי לא לקפוץ חזרה לקטלוג באמצע עבודה
+        adapter.notifyDataSetChanged()
     }
 
     private fun openVideo(url: String) {
@@ -122,45 +173,47 @@ class MainActivity : AppCompatActivity() {
     private fun updateAdapter(newList: MutableList<ShoppingItem>) {
         adapter = ShoppingAdapter(
             newList,
-            userShoppingList.map { it.title }, // רשימת שמות לבדיקת V
-            { item -> toggleProduct(item) },  // פונקציית הוספה/הסרה
-            { url -> openVideo(url) }          // פונקציית וידאו
+            userShoppingList.map { it.title },
+            { item -> toggleProduct(item) },
+            { url -> openVideo(url) },
+            { item -> openEditProduct(item) }
         )
         recyclerView.adapter = adapter
     }
 
-    private fun setupCatalog() {
+    private fun openEditProduct(item: ShoppingItem) {
+        val intent = Intent(this, AdminActivity::class.java)
+        intent.putExtra("EDIT_ITEM", item)
+        startAdminActivity.launch(intent)
+    }
+
+    private fun setupInitialCatalog() {
         catalogItems = mutableListOf(
-            // פירות וירקות
-            ShoppingItem("עגבנייה", "קילו עגבניות שרי", "פירות וירקות", R.drawable.tomato, "https://www.youtube.com/watch?v=PTIxy8anmYM"),
-            ShoppingItem("מלפפון", "מארז מלפפונים", "פירות וירקות", R.drawable.cucumber, "https://www.youtube.com/watch?v=dvWiypj3W7s"),
-            ShoppingItem("תפוח עץ", "פינק ליידי", "פירות וירקות", R.drawable.apple, "https://www.youtube.com/watch?v=eBzTCbGnlWo"),
-            ShoppingItem("פלפל אדום", "גמבה טרי", "פירות וירקות", R.drawable.pepper, "https://www.youtube.com/shorts/jSCAoZ0bKHk"),
-            ShoppingItem("בננה", "מארז בננות", "פירות וירקות", R.drawable.banana, "https://www.youtube.com/shorts/QB9nqTjo0-M"),
-            ShoppingItem("בצל יבש", "רשת בצל", "פירות וירקות", R.drawable.onion, "https://www.youtube.com/shorts/XYwJYA4ggRc"),
-
-            // מוצרי חלב
-            ShoppingItem("חלב 3%", "קרטון 1 ליטר", "מוצרי חלב", R.drawable.milk, "https://www.youtube.com/watch?v=FXTOqgai13w"),
-            ShoppingItem("גבינה צהובה", "עמק 200 גרם", "מוצרי חלב", R.drawable.yelloecheese, "https://www.youtube.com/watch?v=GJ2Q4oHLbgo"),
-            ShoppingItem("יופלה", "יופלה שטוזים", "מוצרי חלב", R.drawable.yopaledelicacy, "https://www.youtube.com/watch?v=Pecoy9kXOQ0"),
-            ShoppingItem("גבינה לבנה", "250 גרם", "מוצרי חלב", R.drawable.curds, "https://www.youtube.com/watch?v=CA2-wEtZhKw"),
-            ShoppingItem("קוטג'", "5% תנובה", "מוצרי חלב", R.drawable.cottage, "https://www.youtube.com/watch?v=BffrD1dAIek"),
-            ShoppingItem("חמאה", "200 גרם", "מוצרי חלב", R.drawable.butter, "https://www.youtube.com/watch?v=sO1A_eW4Bdo"),
-
-            // ניקיון
-            ShoppingItem("אקונומיקה", "נוזל ניקוי", "ניקיון", R.drawable.bleach, "https://www.youtube.com/watch?v=w_WER-bRsMM"),
-            ShoppingItem("נוזל כלים", "750 מ\"ל", "ניקיון", R.drawable.dishwashingliquid, "https://www.youtube.com/shorts/FFw_NPmyOk4"),
-            ShoppingItem("נייר טואלט", "30 גלילים", "ניקיון", R.drawable.toiletpaper, "https://www.youtube.com/watch?v=gv6KBSIOaAc"),
-
-            // מאפה ודגנים
-            ShoppingItem("לחם מחמצת", "לחם מחמצת אנג'ל", "מאפה ודגנים", R.drawable.bread, "https://www.youtube.com/watch?v=MHh2I2o4bQQ"),
-            ShoppingItem("לחמניות", "מארז 6 לחמניות", "מאפה ודגנים", R.drawable.bun, "https://www.youtube.com/watch?v=uOjAmj2j8fo"),
-            ShoppingItem("קורנפלקס", "דגני בוקר", "מאפה ודגנים", R.drawable.korenflakes, "https://www.youtube.com/watch?v=4HfkAG56lr0"),
-
-            // שימורים ומזווה
-            ShoppingItem("טונה", "מארז 4 קופסאות", "שימורים ומזווה", R.drawable.tuna, "https://www.youtube.com/watch?v=O7QY9oH4S5c"),
-            ShoppingItem("אורז פרסי", "1 קילו", "שימורים ומזווה", R.drawable.rice, "https://www.youtube.com/watch?v=GA9ljFbE004"),
-            ShoppingItem("פסטה", "500 גרם", "שימורים ומזווה", R.drawable.pasta, "https://www.youtube.com/watch?v=1G0sivf2LU8")
+            ShoppingItem(
+                "עגבנייה",
+                "קילו עגבניות שרי",
+                "פירות וירקות",
+                "https://upload.wikimedia.org/wikipedia/commons/8/89/Tomato_je.jpg", // קישור לתמונה
+                "https://www.youtube.com/watch?v=PTIxy8anmYM",
+                0
+            ),
+            ShoppingItem(
+                "חלב 3%",
+                "קרטון 1 ליטר",
+                "מוצרי חלב וביצים",
+                "https://p2.piqsels.com/preview/630/562/591/milk-bottle-glass-bottle-milk-bottle.jpg", // קישור לתמונה
+                "https://www.youtube.com/watch?v=FXTOqgai13w",
+                0
+            ),
+            ShoppingItem(
+                "לחם פרוס",
+                "חיטה מלאה",
+                "מאפה ודגנים",
+                "https://cdn.pixabay.com/photo/2014/07/22/09/59/bread-399286_1280.jpg", // קישור לתמונה
+                "",
+                0
+            )
         )
+        saveItemsToDisk() // שמירה לדיסק כדי שהשינויים יישמרו
     }
 }

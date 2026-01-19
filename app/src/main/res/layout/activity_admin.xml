@@ -4,7 +4,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:padding="20dp"
-    android:layoutDirection="rtl">
+    android:background="#F5F5F5">
 
     <TextView
         android:layout_width="wrap_content"
@@ -13,47 +13,66 @@
         android:textSize="24sp"
         android:textStyle="bold"
         android:layout_gravity="center"
-        android:layout_marginBottom="20dp" />
+        android:layout_marginBottom="24dp"
+        android:textColor="#333333" />
 
     <EditText
-        android:id="@+id/etAdminTitle"
+        android:id="@+id/etTitle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="שם המוצר" />
+        android:hint="שם המוצר (חובה)"
+        android:inputType="text"
+        android:layout_marginBottom="12dp" />
 
     <EditText
-        android:id="@+id/etAdminDescription"
+        android:id="@+id/etDescription"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="תיאור קצר"
-        android:layout_marginTop="10dp" />
+        android:inputType="text"
+        android:layout_marginBottom="12dp" />
 
     <EditText
-        android:id="@+id/etAdminImageUrl"
+        android:id="@+id/etImageUrl"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="קישור לתמונה (URL)"
-        android:layout_marginTop="10dp" />
+        android:inputType="textUri"
+        android:layout_marginBottom="12dp" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="בחר קטגוריה:"
-        android:layout_marginTop="15dp" />
+        android:textSize="16sp"
+        android:layout_marginTop="8dp" />
 
     <Spinner
         android:id="@+id/spinnerCategory"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="5dp" />
+        android:layout_marginTop="8dp"
+        android:entries="@array/categories_array" />
 
     <Button
-        android:id="@+id/btnSaveProduct"
+        android:id="@+id/btnSave"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="שמור מוצר"
-        android:layout_marginTop="30dp"
+        android:layout_marginTop="32dp"
         android:backgroundTint="#4CAF50"
-        android:textColor="@android:color/white" />
+        android:textColor="@android:color/white"
+        android:textSize="18sp" />
+
+
+    <Button
+        android:id="@+id/btnDelete"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="מחק מוצר זה"
+        android:backgroundTint="#F44336"
+        android:textColor="@android:color/white"
+        android:layout_marginTop="8dp"
+        android:visibility="gone" />
 
 </LinearLayout>

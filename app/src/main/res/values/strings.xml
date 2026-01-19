@@ -1,3 +1,11 @@
 <resources>
     <string name="app_name">ShoplyAndroid</string>
+    <string-array name="categories_array">
+        <item>פירות וירקות</item>
+        <item>מוצרי חלב</item>
+        <item>ניקיון</item>
+        <item>מאפה ודגנים</item>
+        <item>בשר ודגים</item>
+        <item>שימורים ומזווה</item>
+    </string-array>
 </resources>
