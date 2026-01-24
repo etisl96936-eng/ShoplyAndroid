@@ -204,7 +204,7 @@ class MainActivity : AppCompatActivity() {
             ShoppingItem("חלב 3%", "קרטון 1 ליטר תנובה", "מוצרי חלב וביצים", "https://m.pricez.co.il/ProductPictures/200x/7290000042442.jpg", vDairy, 0),
             ShoppingItem("גבינה צהובה", "עמק 200 גרם", "מוצרי חלב וביצים", "https://m.pricez.co.il/ProductPictures/200x/7290000052311.jpg", vDairy, 0),
             ShoppingItem("קוטג' 5%", "גביע 250 גרם", "מוצרי חלב וביצים", "https://m.pricez.co.il/ProductPictures/200x/7290004127329.jpg", vDairy, 0),
-            ShoppingItem("לחם פרוס", "אחיד פרוס אנג'ל", "מאפה ודגנים", "https://m.pricez.co.il/ProductPictures/200x/7290118500361.jpg", vBakery, 0),
+            ShoppingItem("לחם פרוס", "אחיד פרוס אנג'ל", "מאפה ודגנים", "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT6ozOVUG7lZnZSGc3n6ATPNkMQY1zLsyIcFA&s", vBakery, 0),
             ShoppingItem("פסטה פוסילי", "500 גרם ברילה", "מאפה ודגנים", "https://m.pricez.co.il/ProductPictures/200x/8076802085981.jpg", vBakery, 0),
             ShoppingItem("קורנפלקס", "750 גרם תלמה", "מאפה ודגנים", "https://m.pricez.co.il/ProductPictures/200x/7290112494351.jpg", vBakery, 0),
             ShoppingItem("קוקה קולה", "בקבוק 1.5 ליטר", "שימורים ומזווה", "https://m.pricez.co.il/ProductPictures/200x/7290110115203.jpg", vPantry, 0),
