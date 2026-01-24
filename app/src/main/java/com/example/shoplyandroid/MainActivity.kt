@@ -154,8 +154,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun openVideo(url: String) {
-        if (url.isNotEmpty()) startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-        else Toast.makeText(this, "אין וידאו זמין", Toast.LENGTH_SHORT).show()
+        if (url.isNotEmpty()) {
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+            startActivity(intent)
+        } else {
+            Toast.makeText(this, "אין וידאו זמין", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun saveItemsToDisk() {
@@ -172,20 +176,26 @@ class MainActivity : AppCompatActivity() {
         val type = object : TypeToken<MutableList<ShoppingItem>>() {}.type
 
         val catalogJson = prefs.getString("saved_catalog", null)
-        if (catalogJson != null) catalogItems = gson.fromJson(catalogJson, type)
-        else setupInitialCatalog()
+        if (catalogJson != null) {
+            catalogItems = gson.fromJson(catalogJson, type)
+        } else {
+            setupInitialCatalog()
+        }
 
         val userListJson = prefs.getString("saved_user_list", null)
-        if (userListJson != null) userShoppingList = gson.fromJson(userListJson, type)
+        if (userListJson != null) {
+            userShoppingList = gson.fromJson(userListJson, type)
+        }
     }
 
     private fun setupInitialCatalog() {
-        val vProduce = "https://www.youtube.com/watch?v=PTIxy8anmYM"
-        val vDairy = "https://www.youtube.com/watch?v=FXTOqgai13w"
-        val vBakery = "https://www.youtube.com/watch?v=qMvIeE1u1E8"
-        val vPantry = "https://www.youtube.com/watch?v=fB_vS6mR9No"
-        val vCleaning = "https://www.youtube.com/watch?v=4sE8uK4eKyo"
-        val vMeat = "https://www.youtube.com/watch?v=0_u6mY_FIsU"
+        // הקישורים לוידאוד
+        val vDairy = "https://www.youtube.com/watch?v=eSkBFNsQUis"
+        val vProduce = "https://www.youtube.com/watch?v=iRgFLeRcZE8"
+        val vCleaning = "https://www.youtube.com/shorts/sGdKLTpOoFo"
+        val vBakery = "https://www.youtube.com/watch?v=M1WmB0i4Pxc"
+        val vPantry = "https://www.youtube.com/watch?v=OlZRFpQQI58"
+        val vMeat = "https://www.youtube.com/shorts/JOF1_eEWGT8"
 
         catalogItems = mutableListOf(
             ShoppingItem("עגבנייה", "קילו עגבניות שרי", "פירות וירקות", "https://m.pricez.co.il/ProductPictures/200x/Pricez65717.jpg", vProduce, 0),
@@ -194,7 +204,7 @@ class MainActivity : AppCompatActivity() {
             ShoppingItem("חלב 3%", "קרטון 1 ליטר תנובה", "מוצרי חלב וביצים", "https://m.pricez.co.il/ProductPictures/200x/7290000042442.jpg", vDairy, 0),
             ShoppingItem("גבינה צהובה", "עמק 200 גרם", "מוצרי חלב וביצים", "https://m.pricez.co.il/ProductPictures/200x/7290000052311.jpg", vDairy, 0),
             ShoppingItem("קוטג' 5%", "גביע 250 גרם", "מוצרי חלב וביצים", "https://m.pricez.co.il/ProductPictures/200x/7290004127329.jpg", vDairy, 0),
-            ShoppingItem("לחם פרוס", "אחיד פרוס אנג'ל", "מאפה ודגנים", "https://m.pricez.co.il/ProductPictures/200x/7290018500361.jpg", vBakery, 0),
+            ShoppingItem("לחם פרוס", "אחיד פרוס אנג'ל", "מאפה ודגנים", "https://m.pricez.co.il/ProductPictures/200x/7290118500361.jpg", vBakery, 0),
             ShoppingItem("פסטה פוסילי", "500 גרם ברילה", "מאפה ודגנים", "https://m.pricez.co.il/ProductPictures/200x/8076802085981.jpg", vBakery, 0),
             ShoppingItem("קורנפלקס", "750 גרם תלמה", "מאפה ודגנים", "https://m.pricez.co.il/ProductPictures/200x/7290112494351.jpg", vBakery, 0),
             ShoppingItem("קוקה קולה", "בקבוק 1.5 ליטר", "שימורים ומזווה", "https://m.pricez.co.il/ProductPictures/200x/7290110115203.jpg", vPantry, 0),
