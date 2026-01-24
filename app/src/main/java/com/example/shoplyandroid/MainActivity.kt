@@ -20,7 +20,7 @@ class MainActivity : AppCompatActivity() {
     private var userShoppingList: MutableList<ShoppingItem> = mutableListOf()
     private lateinit var recyclerView: RecyclerView
     private lateinit var btnViewList: Button
-    private var isShowingOnlyCart = false // משתנה למעקב: האם אנחנו מציגים רק את הסל?
+    private var isShowingOnlyCart = false
 
     private val startAdminActivity = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == RESULT_OK) {
@@ -49,12 +49,12 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         recyclerView = findViewById(R.id.recyclerView)
+        btnViewList = findViewById(R.id.btnViewList)
         val etSearch = findViewById<EditText>(R.id.etSearch)
         val spinnerCategory = findViewById<Spinner>(R.id.spinnerCategory)
-        btnViewList = findViewById(R.id.btnViewList)
         val fabAddProduct = findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.fabAddProduct)
 
-        loadItemsFromDisk() // טוען גם את הקטלוג וגם את הסל שנשמר
+        loadItemsFromDisk()
 
         val categories = arrayOf("הכל", "פירות וירקות", "מוצרי חלב וביצים", "ניקיון", "מאפה ודגנים", "שימורים ומזווה", "בשר ודגים")
         spinnerCategory.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, categories)
@@ -74,7 +74,6 @@ class MainActivity : AppCompatActivity() {
             override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
 
-        // פתרון נקודה 2: לחיצה על הכפתור מחליפה בין תצוגת "הכל" לתצוגת "סל קניות"
         btnViewList.setOnClickListener {
             isShowingOnlyCart = !isShowingOnlyCart
             if (isShowingOnlyCart) {
@@ -92,10 +91,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun applyFilter() {
-        val query = findViewById<EditText>(R.id.etSearch).text.toString().trim().lowercase()
-        val selectedCat = findViewById<Spinner>(R.id.spinnerCategory).selectedItem?.toString() ?: "הכל"
+        val etSearch = findViewById<EditText>(R.id.etSearch)
+        val spinnerCategory = findViewById<Spinner>(R.id.spinnerCategory)
+        val query = etSearch.text.toString().trim().lowercase()
+        val selectedCat = spinnerCategory.selectedItem?.toString() ?: "הכל"
 
-        // פתרון נקודה 2: סינון לפי האם המשתמש ביקש לראות רק את הסל שלו
         val baseList = if (isShowingOnlyCart) userShoppingList else catalogItems
 
         val filteredList = baseList.filter { item ->
@@ -124,13 +124,12 @@ class MainActivity : AppCompatActivity() {
         if (index != -1) userShoppingList.removeAt(index)
         else userShoppingList.add(item)
 
-        saveItemsToDisk() // פתרון נקודה 1: שומר מיד כשיש שינוי בסל
+        saveItemsToDisk()
         updateViewListButton()
         applyFilter()
     }
 
     private fun updateViewListButton() {
-        // פתרון נקודה 3: טקסט דינמי
         if (userShoppingList.isEmpty()) {
             btnViewList.text = "הסל ריק - הוסף מוצרים לרשימה"
         } else if (isShowingOnlyCart) {
@@ -159,7 +158,6 @@ class MainActivity : AppCompatActivity() {
         else Toast.makeText(this, "אין וידאו זמין", Toast.LENGTH_SHORT).show()
     }
 
-    // פתרון נקודה 1: שמירה של שני המערכים
     private fun saveItemsToDisk() {
         val prefs = getSharedPreferences("ShoplyPrefs", MODE_PRIVATE).edit()
         val gson = Gson()
@@ -168,7 +166,6 @@ class MainActivity : AppCompatActivity() {
         prefs.apply()
     }
 
-    // פתרון נקודה 1: טעינה של שני המערכים
     private fun loadItemsFromDisk() {
         val prefs = getSharedPreferences("ShoplyPrefs", MODE_PRIVATE)
         val gson = Gson()
@@ -183,9 +180,29 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupInitialCatalog() {
+        val vProduce = "https://www.youtube.com/watch?v=PTIxy8anmYM"
+        val vDairy = "https://www.youtube.com/watch?v=FXTOqgai13w"
+        val vBakery = "https://www.youtube.com/watch?v=qMvIeE1u1E8"
+        val vPantry = "https://www.youtube.com/watch?v=fB_vS6mR9No"
+        val vCleaning = "https://www.youtube.com/watch?v=4sE8uK4eKyo"
+        val vMeat = "https://www.youtube.com/watch?v=0_u6mY_FIsU"
+
         catalogItems = mutableListOf(
-            ShoppingItem("עגבנייה", "קילו עגבניות שרי", "פירות וירקות", "https://upload.wikimedia.org/wikipedia/commons/8/89/Tomato_je.jpg", "https://www.youtube.com/watch?v=PTIxy8anmYM", 0),
-            ShoppingItem("חלב 3%", "קרטון 1 ליטר", "מוצרי חלב וביצים", "https://p2.piqsels.com/preview/630/562/591/milk-bottle-glass-bottle-milk-bottle.jpg", "https://www.youtube.com/watch?v=FXTOqgai13w", 0)
+            ShoppingItem("עגבנייה", "קילו עגבניות שרי", "פירות וירקות", "https://m.pricez.co.il/ProductPictures/200x/Pricez65717.jpg", vProduce, 0),
+            ShoppingItem("מלפפון", "קילו מלפפון מובחר", "פירות וירקות", "https://m.pricez.co.il/ProductPictures/200x/Pricez65716.jpg", vProduce, 0),
+            ShoppingItem("בננה", "מארז בננות", "פירות וירקות", "https://m.pricez.co.il/ProductPictures/200x/Pricez65907.jpg", vProduce, 0),
+            ShoppingItem("חלב 3%", "קרטון 1 ליטר תנובה", "מוצרי חלב וביצים", "https://m.pricez.co.il/ProductPictures/200x/7290000042442.jpg", vDairy, 0),
+            ShoppingItem("גבינה צהובה", "עמק 200 גרם", "מוצרי חלב וביצים", "https://m.pricez.co.il/ProductPictures/200x/7290000052311.jpg", vDairy, 0),
+            ShoppingItem("קוטג' 5%", "גביע 250 גרם", "מוצרי חלב וביצים", "https://m.pricez.co.il/ProductPictures/200x/7290004127329.jpg", vDairy, 0),
+            ShoppingItem("לחם פרוס", "אחיד פרוס אנג'ל", "מאפה ודגנים", "https://m.pricez.co.il/ProductPictures/200x/7290018500361.jpg", vBakery, 0),
+            ShoppingItem("פסטה פוסילי", "500 גרם ברילה", "מאפה ודגנים", "https://m.pricez.co.il/ProductPictures/200x/8076802085981.jpg", vBakery, 0),
+            ShoppingItem("קורנפלקס", "750 גרם תלמה", "מאפה ודגנים", "https://m.pricez.co.il/ProductPictures/200x/7290112494351.jpg", vBakery, 0),
+            ShoppingItem("קוקה קולה", "בקבוק 1.5 ליטר", "שימורים ומזווה", "https://m.pricez.co.il/ProductPictures/200x/7290110115203.jpg", vPantry, 0),
+            ShoppingItem("שמן זית", "750 מ\"ל יד מרדכי", "שימורים ומזווה", "https://m.pricez.co.il/ProductPictures/200x/7290010429554.jpg", vPantry, 0),
+            ShoppingItem("אורז פרסי", "1 קילו סוגת", "שימורים ומזווה", "https://m.pricez.co.il/ProductPictures/200x/7290000211442.jpg", vPantry, 0),
+            ShoppingItem("טונה בשמן", "מארז 4 יחידות", "בשר ודגים", "https://m.pricez.co.il/ProductPictures/200x/7290019196273.jpg", vMeat, 0),
+            ShoppingItem("נוזל כלים", "700 מ\"ל פיירי", "ניקיון", "https://m.pricez.co.il/ProductPictures/200x/8700216163811.jpg", vCleaning, 0),
+            ShoppingItem("נייר טואלט", "30 גלילים לילי", "ניקיון", "https://m.pricez.co.il/ProductPictures/200x/7290103702540.jpg", vCleaning, 0)
         )
         saveItemsToDisk()
     }
