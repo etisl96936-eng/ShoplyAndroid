@@ -19,17 +19,32 @@ class LoginActivity : AppCompatActivity() {
         val btnLogin = findViewById<Button>(R.id.btnLogin)
 
         btnLogin.setOnClickListener {
-            val username = etUsername.text.toString()
-            val password = etPassword.text.toString()
+            val username = etUsername.text.toString().trim()
+            val password = etPassword.text.toString().trim()
 
-            // בדיקת פרטים קשיחים לפי המטלה
             if (username == "admin" && password == "123456") {
-                // מעבר למסך הראשי באמצעות Intent
+                val prefs = getSharedPreferences("ShoplyPrefs", MODE_PRIVATE).edit()
+                prefs.putBoolean("IS_ADMIN", true)
+                prefs.apply()
+
                 val intent = Intent(this, MainActivity::class.java)
                 startActivity(intent)
                 finish()
+
+            } else if (username == "eti" && password == "123456") {
+                val prefs = getSharedPreferences("ShoplyPrefs", MODE_PRIVATE).edit()
+                prefs.putBoolean("IS_ADMIN", false)
+                prefs.apply()
+
+                val intent = Intent(this, MainActivity::class.java)
+                startActivity(intent)
+                finish()
+
             } else {
-                // הצגת הודעת שגיאה במקרה של פרטים שגויים
+                val prefs = getSharedPreferences("ShoplyPrefs", MODE_PRIVATE).edit()
+                prefs.putBoolean("IS_ADMIN", false)
+                prefs.apply()
+
                 Toast.makeText(this, "שם משתמש או סיסמה שגויים", Toast.LENGTH_SHORT).show()
             }
         }

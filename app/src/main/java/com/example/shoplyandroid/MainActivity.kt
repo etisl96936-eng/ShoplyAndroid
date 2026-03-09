@@ -22,7 +22,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnViewList: Button
     private var isShowingOnlyCart = false
 
-    private val startAdminActivity = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()) { result ->
+    private val startAdminActivity = registerForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
+    ) { result ->
         if (result.resultCode == RESULT_OK) {
             val data = result.data
             val isDelete = data?.getBooleanExtra("IS_DELETE", false) ?: false
@@ -35,10 +37,14 @@ class MainActivity : AppCompatActivity() {
                 val returnedItem = data?.getSerializableExtra("NEW_PRODUCT") as? ShoppingItem
                 returnedItem?.let { item ->
                     val existingIndex = catalogItems.indexOfFirst { it.title == item.title }
-                    if (existingIndex != -1) catalogItems[existingIndex] = item
-                    else catalogItems.add(0, item)
+                    if (existingIndex != -1) {
+                        catalogItems[existingIndex] = item
+                    } else {
+                        catalogItems.add(0, item)
+                    }
                 }
             }
+
             saveItemsToDisk()
             applyFilter()
         }
@@ -54,33 +60,63 @@ class MainActivity : AppCompatActivity() {
         val spinnerCategory = findViewById<Spinner>(R.id.spinnerCategory)
         val fabAddProduct = findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.fabAddProduct)
 
+        val prefs = getSharedPreferences("ShoplyPrefs", MODE_PRIVATE)
+        val isAdmin = prefs.getBoolean("IS_ADMIN", false)
+
+        if (isAdmin) {
+            fabAddProduct.visibility = View.VISIBLE
+            Toast.makeText(this, "לחיצה ארוכה על מוצר לעריכה", Toast.LENGTH_LONG).show()
+        } else {
+            fabAddProduct.visibility = View.GONE
+        }
+
         loadItemsFromDisk()
 
-        val categories = arrayOf("הכל", "פירות וירקות", "מוצרי חלב וביצים", "ניקיון", "מאפה ודגנים", "שימורים ומזווה", "בשר ודגים")
-        spinnerCategory.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, categories)
+        val categories = arrayOf(
+            "הכל",
+            "פירות וירקות",
+            "מוצרי חלב וביצים",
+            "ניקיון",
+            "מאפה ודגנים",
+            "שימורים ומזווה",
+            "בשר ודגים"
+        )
+
+        val spinnerAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, categories)
+        spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        spinnerCategory.adapter = spinnerAdapter
 
         recyclerView.layoutManager = LinearLayoutManager(this)
         applyFilter()
         updateViewListButton()
 
         etSearch.addTextChangedListener(object : TextWatcher {
-            override fun afterTextChanged(s: Editable?) { applyFilter() }
+            override fun afterTextChanged(s: Editable?) {
+                applyFilter()
+            }
+
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
         })
 
         spinnerCategory.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) { applyFilter() }
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                applyFilter()
+            }
+
             override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
 
         btnViewList.setOnClickListener {
             isShowingOnlyCart = !isShowingOnlyCart
+
             if (isShowingOnlyCart) {
                 btnViewList.setBackgroundColor(android.graphics.Color.GRAY)
             } else {
                 btnViewList.setBackgroundColor(android.graphics.Color.parseColor("#4CAF50"))
             }
+
             applyFilter()
             updateViewListButton()
         }
@@ -93,6 +129,7 @@ class MainActivity : AppCompatActivity() {
     private fun applyFilter() {
         val etSearch = findViewById<EditText>(R.id.etSearch)
         val spinnerCategory = findViewById<Spinner>(R.id.spinnerCategory)
+
         val query = etSearch.text.toString().trim().lowercase()
         val selectedCat = spinnerCategory.selectedItem?.toString() ?: "הכל"
 
@@ -108,9 +145,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateAdapter(newList: MutableList<ShoppingItem>) {
+        val prefs = getSharedPreferences("ShoplyPrefs", MODE_PRIVATE)
+        val isAdmin = prefs.getBoolean("IS_ADMIN", false)
+
         adapter = ShoppingAdapter(
             newList,
             userShoppingList.map { it.title },
+            isAdmin,
             { item -> toggleProduct(item) },
             { url -> openVideo(url) },
             { item -> openEditProduct(item) },
@@ -121,8 +162,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun toggleProduct(item: ShoppingItem) {
         val index = userShoppingList.indexOfFirst { it.title == item.title }
-        if (index != -1) userShoppingList.removeAt(index)
-        else userShoppingList.add(item)
+
+        if (index != -1) {
+            userShoppingList.removeAt(index)
+        } else {
+            userShoppingList.add(item)
+        }
 
         saveItemsToDisk()
         updateViewListButton()
@@ -189,7 +234,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupInitialCatalog() {
-        // הקישורים לוידאוד
         val vDairy = "https://www.youtube.com/watch?v=eSkBFNsQUis"
         val vProduce = "https://www.youtube.com/watch?v=iRgFLeRcZE8"
         val vCleaning = "https://www.youtube.com/shorts/sGdKLTpOoFo"
@@ -214,6 +258,7 @@ class MainActivity : AppCompatActivity() {
             ShoppingItem("נוזל כלים", "700 מ\"ל פיירי", "ניקיון", "https://m.pricez.co.il/ProductPictures/200x/8700216163811.jpg", vCleaning, 0),
             ShoppingItem("נייר טואלט", "30 גלילים לילי", "ניקיון", "https://m.pricez.co.il/ProductPictures/200x/7290103702540.jpg", vCleaning, 0)
         )
+
         saveItemsToDisk()
     }
 }
