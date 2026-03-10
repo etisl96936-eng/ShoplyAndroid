@@ -33,20 +33,36 @@ class MainActivity : AppCompatActivity() {
                 val titleToDelete = data?.getStringExtra("DELETED_PRODUCT_TITLE")
                 catalogItems.removeAll { it.title == titleToDelete }
                 userShoppingList.removeAll { it.title == titleToDelete }
+
+                android.widget.Toast.makeText(
+                    this@MainActivity,
+                    "המוצר נמחק מהקטלוג",
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
             } else {
                 val returnedItem = data?.getSerializableExtra("NEW_PRODUCT") as? ShoppingItem
                 returnedItem?.let { item ->
                     val existingIndex = catalogItems.indexOfFirst { it.title == item.title }
+
                     if (existingIndex != -1) {
                         catalogItems[existingIndex] = item
+
+                        android.widget.Toast.makeText(
+                            this@MainActivity,
+                            "המוצר עודכן בקטלוג",
+                            android.widget.Toast.LENGTH_SHORT
+                        ).show()
                     } else {
                         catalogItems.add(0, item)
+
+                        Toast.makeText(this@MainActivity, "המוצר נוסף לקטלוג", Toast.LENGTH_SHORT).show()
                     }
                 }
             }
 
             saveItemsToDisk()
             applyFilter()
+            updateViewListButton()
         }
     }
 
@@ -59,15 +75,16 @@ class MainActivity : AppCompatActivity() {
         val etSearch = findViewById<EditText>(R.id.etSearch)
         val spinnerCategory = findViewById<Spinner>(R.id.spinnerCategory)
         val fabAddProduct = findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.fabAddProduct)
-
+        val tvAdminHint = findViewById<TextView>(R.id.tvAdminHint)
         val prefs = getSharedPreferences("ShoplyPrefs", MODE_PRIVATE)
         val isAdmin = prefs.getBoolean("IS_ADMIN", false)
 
         if (isAdmin) {
             fabAddProduct.visibility = View.VISIBLE
-            Toast.makeText(this, "לחיצה ארוכה על מוצר לעריכה", Toast.LENGTH_LONG).show()
+            tvAdminHint.visibility = View.VISIBLE
         } else {
             fabAddProduct.visibility = View.GONE
+            tvAdminHint.visibility = View.GONE
         }
 
         loadItemsFromDisk()
@@ -129,6 +146,7 @@ class MainActivity : AppCompatActivity() {
     private fun applyFilter() {
         val etSearch = findViewById<EditText>(R.id.etSearch)
         val spinnerCategory = findViewById<Spinner>(R.id.spinnerCategory)
+        val tvEmptyState = findViewById<TextView>(R.id.tvEmptyState)
 
         val query = etSearch.text.toString().trim().lowercase()
         val selectedCat = spinnerCategory.selectedItem?.toString() ?: "הכל"
@@ -140,6 +158,20 @@ class MainActivity : AppCompatActivity() {
             val matchesCat = selectedCat == "הכל" || item.category == selectedCat
             matchesQuery && matchesCat
         }.toMutableList()
+
+        if (filteredList.isEmpty()) {
+            recyclerView.visibility = View.GONE
+            tvEmptyState.visibility = View.VISIBLE
+
+            tvEmptyState.text = if (isShowingOnlyCart) {
+                "רשימת הקניות שלך ריקה כרגע"
+            } else {
+                "לא נמצאו מוצרים"
+            }
+        } else {
+            recyclerView.visibility = View.VISIBLE
+            tvEmptyState.visibility = View.GONE
+        }
 
         updateAdapter(filteredList)
     }
@@ -165,8 +197,10 @@ class MainActivity : AppCompatActivity() {
 
         if (index != -1) {
             userShoppingList.removeAt(index)
+            Toast.makeText(this, "המוצר הוסר מרשימת הקניות", Toast.LENGTH_SHORT).show()
         } else {
             userShoppingList.add(item)
+            Toast.makeText(this, "המוצר נוסף לרשימת הקניות", Toast.LENGTH_SHORT).show()
         }
 
         saveItemsToDisk()
@@ -190,6 +224,8 @@ class MainActivity : AppCompatActivity() {
         saveItemsToDisk()
         applyFilter()
         updateViewListButton()
+
+        Toast.makeText(this, "המוצר נמחק מהקטלוג", Toast.LENGTH_SHORT).show()
     }
 
     private fun openEditProduct(item: ShoppingItem) {
