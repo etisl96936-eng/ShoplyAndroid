@@ -190,9 +190,10 @@ class MainActivity : AppCompatActivity() {
     private fun updateWelcomeText() {
         val prefs = getSharedPreferences("ShoplyPrefs", MODE_PRIVATE)
         val username = prefs.getString("USERNAME", "") ?: ""
-        val displayName = prefs.getString("DISPLAY_NAME", "") ?: ""
-        val nameToShow = if (displayName.isNotBlank()) displayName else username
+        val displayNameKey = "DISPLAY_NAME_$username"
+        val displayName = prefs.getString(displayNameKey, "") ?: ""
 
+        val nameToShow = if (displayName.isNotBlank()) displayName else username
         tvWelcome.text = if (nameToShow.isNotBlank()) "שלום, $nameToShow" else "שלום"
     }
 
