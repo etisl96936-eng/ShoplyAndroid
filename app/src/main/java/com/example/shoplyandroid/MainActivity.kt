@@ -142,6 +142,11 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this, StatisticsActivity::class.java))
         }
 
+        val btnChat = findViewById<Button>(R.id.btnChat)
+        btnChat.setOnClickListener {
+            startActivity(Intent(this, ChatActivity::class.java))
+        }
+
         btnProfileIcon.setOnClickListener {
             startActivity(Intent(this, ProfileActivity::class.java))
         }
