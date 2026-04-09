@@ -14,6 +14,7 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import android.os.Build
 
 class MainActivity : AppCompatActivity() {
 
@@ -100,6 +101,16 @@ class MainActivity : AppCompatActivity() {
             "הכל", "פירות וירקות", "מוצרי חלב וביצים",
             "ניקיון", "מאפה ודגנים", "שימורים ומזווה", "בשר ודגים"
         )
+
+        // בקשת הרשאת התראות (Android 13+)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)
+                != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(
+                    arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 100
+                )
+            }
+        }
 
         val spinnerAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, categories)
         spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)

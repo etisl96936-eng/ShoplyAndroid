@@ -56,6 +56,8 @@ dependencies {
     implementation("com.google.firebase:firebase-auth-ktx")
     implementation("com.google.firebase:firebase-firestore-ktx")
 
+    implementation("com.google.firebase:firebase-messaging-ktx")
+
     // RecyclerView - להצגת הרשימה
     implementation("androidx.recyclerview:recyclerview:1.3.2")
 
