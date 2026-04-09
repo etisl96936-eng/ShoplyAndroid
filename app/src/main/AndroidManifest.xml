@@ -32,6 +32,8 @@
             android:exported="false" />
 
         <activity android:name=".StatisticsActivity" />
+        <activity android:name=".ProfileActivity" />
+
 
     </application>
 

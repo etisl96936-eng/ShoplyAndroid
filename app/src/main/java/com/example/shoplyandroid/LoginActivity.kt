@@ -25,6 +25,7 @@ class LoginActivity : AppCompatActivity() {
             if (username == "admin" && password == "123456") {
                 val prefs = getSharedPreferences("ShoplyPrefs", MODE_PRIVATE).edit()
                 prefs.putBoolean("IS_ADMIN", true)
+                prefs.putString("USERNAME", username)
                 prefs.apply()
 
                 val intent = Intent(this, MainActivity::class.java)
@@ -34,6 +35,7 @@ class LoginActivity : AppCompatActivity() {
             } else if (username == "eti" && password == "123456") {
                 val prefs = getSharedPreferences("ShoplyPrefs", MODE_PRIVATE).edit()
                 prefs.putBoolean("IS_ADMIN", false)
+                prefs.putString("USERNAME", username)
                 prefs.apply()
 
                 val intent = Intent(this, MainActivity::class.java)
@@ -43,6 +45,7 @@ class LoginActivity : AppCompatActivity() {
             } else {
                 val prefs = getSharedPreferences("ShoplyPrefs", MODE_PRIVATE).edit()
                 prefs.putBoolean("IS_ADMIN", false)
+                prefs.putString("USERNAME", "")
                 prefs.apply()
 
                 Toast.makeText(this, "שם משתמש או סיסמה שגויים", Toast.LENGTH_SHORT).show()
