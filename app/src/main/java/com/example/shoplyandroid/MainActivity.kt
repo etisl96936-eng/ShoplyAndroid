@@ -78,6 +78,7 @@ class MainActivity : AppCompatActivity() {
         recyclerView = findViewById(R.id.recyclerView)
         btnViewList = findViewById(R.id.btnViewList)
 
+        val btnStatistics = findViewById<Button>(R.id.btnStatistics)
         val etSearch = findViewById<EditText>(R.id.etSearch)
         val spinnerCategory = findViewById<Spinner>(R.id.spinnerCategory)
         val fabAddProduct =
@@ -153,6 +154,10 @@ class MainActivity : AppCompatActivity() {
 
             applyFilter()
             updateViewListButton()
+        }
+
+        btnStatistics.setOnClickListener {
+            startActivity(Intent(this, StatisticsActivity::class.java))
         }
 
         fabAddProduct.setOnClickListener {

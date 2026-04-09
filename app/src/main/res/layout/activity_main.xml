@@ -36,6 +36,16 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/etSearch" />
 
+    <Button
+        android:id="@+id/btnStatistics"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="צפה בסטטיסטיקות"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btnViewList" />
+
     <TextView
         android:id="@+id/tvAdminHint"
         android:layout_width="wrap_content"
@@ -47,7 +57,7 @@
         android:visibility="gone"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/btnViewList" />
+        app:layout_constraintTop_toBottomOf="@id/btnStatistics" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView"
