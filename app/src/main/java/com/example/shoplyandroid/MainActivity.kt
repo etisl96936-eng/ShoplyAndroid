@@ -86,9 +86,16 @@ class MainActivity : AppCompatActivity() {
             findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.fabAddProduct)
         val tvAdminHint = findViewById<TextView>(R.id.tvAdminHint)
         val btnLoadMore = findViewById<Button>(R.id.btnLoadMore)
+        val tvWelcome = findViewById<TextView>(R.id.tvWelcome)
 
         val prefs = getSharedPreferences("ShoplyPrefs", MODE_PRIVATE)
         val isAdmin = prefs.getBoolean("IS_ADMIN", false)
+
+        val username = prefs.getString("USERNAME", "") ?: ""
+        val displayName = prefs.getString("DISPLAY_NAME", "") ?: ""
+
+        val nameToShow = if (displayName.isNotBlank()) displayName else username
+        tvWelcome.text = "שלום, $nameToShow"
 
         if (isAdmin) {
             fabAddProduct.visibility = View.VISIBLE
