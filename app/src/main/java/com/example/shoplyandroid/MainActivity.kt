@@ -22,6 +22,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnViewList: Button
     private var isShowingOnlyCart = false
 
+    private var visibleItemCount = 5
+    private val pageSize = 5
+
     private val startAdminActivity = registerForActivityResult(
         androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -34,10 +37,10 @@ class MainActivity : AppCompatActivity() {
                 catalogItems.removeAll { it.title == titleToDelete }
                 userShoppingList.removeAll { it.title == titleToDelete }
 
-                android.widget.Toast.makeText(
+                Toast.makeText(
                     this@MainActivity,
                     "המוצר נמחק מהקטלוג",
-                    android.widget.Toast.LENGTH_SHORT
+                    Toast.LENGTH_SHORT
                 ).show()
             } else {
                 val returnedItem = data?.getSerializableExtra("NEW_PRODUCT") as? ShoppingItem
@@ -46,16 +49,18 @@ class MainActivity : AppCompatActivity() {
 
                     if (existingIndex != -1) {
                         catalogItems[existingIndex] = item
-
-                        android.widget.Toast.makeText(
+                        Toast.makeText(
                             this@MainActivity,
                             "המוצר עודכן בקטלוג",
-                            android.widget.Toast.LENGTH_SHORT
+                            Toast.LENGTH_SHORT
                         ).show()
                     } else {
                         catalogItems.add(0, item)
-
-                        Toast.makeText(this@MainActivity, "המוצר נוסף לקטלוג", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            this@MainActivity,
+                            "המוצר נוסף לקטלוג",
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
                 }
             }
@@ -72,10 +77,14 @@ class MainActivity : AppCompatActivity() {
 
         recyclerView = findViewById(R.id.recyclerView)
         btnViewList = findViewById(R.id.btnViewList)
+
         val etSearch = findViewById<EditText>(R.id.etSearch)
         val spinnerCategory = findViewById<Spinner>(R.id.spinnerCategory)
-        val fabAddProduct = findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.fabAddProduct)
+        val fabAddProduct =
+            findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.fabAddProduct)
         val tvAdminHint = findViewById<TextView>(R.id.tvAdminHint)
+        val btnLoadMore = findViewById<Button>(R.id.btnLoadMore)
+
         val prefs = getSharedPreferences("ShoplyPrefs", MODE_PRIVATE)
         val isAdmin = prefs.getBoolean("IS_ADMIN", false)
 
@@ -109,6 +118,7 @@ class MainActivity : AppCompatActivity() {
 
         etSearch.addTextChangedListener(object : TextWatcher {
             override fun afterTextChanged(s: Editable?) {
+                visibleItemCount = pageSize
                 applyFilter()
             }
 
@@ -118,7 +128,13 @@ class MainActivity : AppCompatActivity() {
         })
 
         spinnerCategory.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+            override fun onItemSelected(
+                parent: AdapterView<*>?,
+                view: View?,
+                position: Int,
+                id: Long
+            ) {
+                visibleItemCount = pageSize
                 applyFilter()
             }
 
@@ -127,6 +143,7 @@ class MainActivity : AppCompatActivity() {
 
         btnViewList.setOnClickListener {
             isShowingOnlyCart = !isShowingOnlyCart
+            visibleItemCount = pageSize
 
             if (isShowingOnlyCart) {
                 btnViewList.setBackgroundColor(android.graphics.Color.GRAY)
@@ -141,12 +158,22 @@ class MainActivity : AppCompatActivity() {
         fabAddProduct.setOnClickListener {
             startAdminActivity.launch(Intent(this, AdminActivity::class.java))
         }
+
+        btnLoadMore.setOnClickListener {
+            val previousCount = visibleItemCount
+            visibleItemCount += pageSize
+            applyFilter()
+            recyclerView.post {
+                recyclerView.scrollToPosition(previousCount - 1)
+            }
+        }
     }
 
     private fun applyFilter() {
         val etSearch = findViewById<EditText>(R.id.etSearch)
         val spinnerCategory = findViewById<Spinner>(R.id.spinnerCategory)
         val tvEmptyState = findViewById<TextView>(R.id.tvEmptyState)
+        val btnLoadMore = findViewById<Button>(R.id.btnLoadMore)
 
         val query = etSearch.text.toString().trim().lowercase()
         val selectedCat = spinnerCategory.selectedItem?.toString() ?: "הכל"
@@ -162,6 +189,7 @@ class MainActivity : AppCompatActivity() {
         if (filteredList.isEmpty()) {
             recyclerView.visibility = View.GONE
             tvEmptyState.visibility = View.VISIBLE
+            btnLoadMore.visibility = View.GONE
 
             tvEmptyState.text = if (isShowingOnlyCart) {
                 "רשימת הקניות שלך ריקה כרגע"
@@ -171,9 +199,13 @@ class MainActivity : AppCompatActivity() {
         } else {
             recyclerView.visibility = View.VISIBLE
             tvEmptyState.visibility = View.GONE
-        }
 
-        updateAdapter(filteredList)
+            val visibleList = filteredList.take(visibleItemCount).toMutableList()
+            updateAdapter(visibleList)
+
+            btnLoadMore.visibility =
+                if (filteredList.size > visibleItemCount) View.VISIBLE else View.GONE
+        }
     }
 
     private fun updateAdapter(newList: MutableList<ShoppingItem>) {
