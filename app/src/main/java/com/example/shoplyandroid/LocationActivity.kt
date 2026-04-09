@@ -10,10 +10,14 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.google.android.gms.location.LocationServices
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 class LocationActivity : AppCompatActivity() {
 
     private lateinit var tvLocation: TextView
+    private lateinit var tvWeather: TextView
 
     private val requestPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
@@ -29,6 +33,7 @@ class LocationActivity : AppCompatActivity() {
         setContentView(R.layout.activity_location)
 
         tvLocation = findViewById(R.id.tvLocation)
+        tvWeather = findViewById(R.id.tvWeather)
         val btnGetLocation = findViewById<Button>(R.id.btnGetLocation)
 
         loadSavedLocation()
@@ -46,7 +51,6 @@ class LocationActivity : AppCompatActivity() {
             ) == PackageManager.PERMISSION_GRANTED -> {
                 getCurrentLocation()
             }
-
             else -> {
                 requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
             }
@@ -71,14 +75,47 @@ class LocationActivity : AppCompatActivity() {
                         .apply()
 
                     Toast.makeText(this, "המיקום נשמר בהצלחה", Toast.LENGTH_SHORT).show()
+                    fetchWeather(latitude, longitude)
                 } else {
                     tvLocation.text = "לא נמצא מיקום נוכחי"
-                    Toast.makeText(this, "לא נמצא מיקום נוכחי", Toast.LENGTH_SHORT).show()
+                    tvWeather.text = "לא ניתן לטעון מזג אוויר בלי מיקום"
                 }
             }
             .addOnFailureListener {
                 Toast.makeText(this, "שגיאה בקבלת מיקום", Toast.LENGTH_SHORT).show()
             }
+    }
+
+    private fun fetchWeather(latitude: Double, longitude: Double) {
+        tvWeather.text = "טוען מזג אוויר..."
+
+        WeatherRetrofitClient.apiService
+            .getCurrentWeather(latitude, longitude)
+            .enqueue(object : Callback<WeatherResponse> {
+                override fun onResponse(
+                    call: Call<WeatherResponse>,
+                    response: Response<WeatherResponse>
+                ) {
+                    if (response.isSuccessful) {
+                        val current = response.body()?.current
+                        val temperature = current?.temperature_2m
+                        val windSpeed = current?.wind_speed_10m
+
+                        if (temperature != null && windSpeed != null) {
+                            tvWeather.text =
+                                "מזג אוויר נוכחי:\nטמפרטורה: $temperature°C\nמהירות רוח: $windSpeed קמ״ש"
+                        } else {
+                            tvWeather.text = "לא התקבלו נתוני מזג אוויר"
+                        }
+                    } else {
+                        tvWeather.text = "שגיאה בטעינת מזג האוויר"
+                    }
+                }
+
+                override fun onFailure(call: Call<WeatherResponse>, t: Throwable) {
+                    tvWeather.text = "כשל בתקשורת עם שירות מזג האוויר"
+                }
+            })
     }
 
     private fun loadSavedLocation() {
