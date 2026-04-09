@@ -13,9 +13,18 @@
             android:id="@+id/tvProfileTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp"
+            android:layout_marginBottom="16dp"
             android:text="פרופיל משתמש"
             android:textSize="24sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvProfileGreeting"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:text="שלום"
+            android:textSize="20sp"
             android:textStyle="bold" />
 
         <TextView
@@ -47,6 +56,13 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="שמור פרופיל" />
+
+        <Button
+            android:id="@+id/btnLocation"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="צפה במיקום" />
 
     </LinearLayout>
 </ScrollView>

@@ -20,6 +20,7 @@ class MainActivity : AppCompatActivity() {
     private var userShoppingList: MutableList<ShoppingItem> = mutableListOf()
     private lateinit var recyclerView: RecyclerView
     private lateinit var btnViewList: Button
+    private lateinit var tvWelcome: TextView
     private var isShowingOnlyCart = false
 
     private var visibleItemCount = 5
@@ -77,26 +78,21 @@ class MainActivity : AppCompatActivity() {
 
         recyclerView = findViewById(R.id.recyclerView)
         btnViewList = findViewById(R.id.btnViewList)
+        tvWelcome = findViewById(R.id.tvWelcome)
 
+        val btnProfileIcon = findViewById<ImageButton>(R.id.btnProfileIcon)
         val btnStatistics = findViewById<Button>(R.id.btnStatistics)
-        val btnProfile = findViewById<Button>(R.id.btnProfile)
-        val btnLocation = findViewById<Button>(R.id.btnLocation)
         val etSearch = findViewById<EditText>(R.id.etSearch)
         val spinnerCategory = findViewById<Spinner>(R.id.spinnerCategory)
         val fabAddProduct =
             findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.fabAddProduct)
         val tvAdminHint = findViewById<TextView>(R.id.tvAdminHint)
         val btnLoadMore = findViewById<Button>(R.id.btnLoadMore)
-        val tvWelcome = findViewById<TextView>(R.id.tvWelcome)
 
         val prefs = getSharedPreferences("ShoplyPrefs", MODE_PRIVATE)
         val isAdmin = prefs.getBoolean("IS_ADMIN", false)
 
-        val username = prefs.getString("USERNAME", "") ?: ""
-        val displayName = prefs.getString("DISPLAY_NAME", "") ?: ""
-
-        val nameToShow = if (displayName.isNotBlank()) displayName else username
-        tvWelcome.text = "שלום, $nameToShow"
+        updateWelcomeText()
 
         if (isAdmin) {
             fabAddProduct.visibility = View.VISIBLE
@@ -133,7 +129,6 @@ class MainActivity : AppCompatActivity() {
             }
 
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
         })
 
@@ -169,12 +164,8 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this, StatisticsActivity::class.java))
         }
 
-        btnProfile.setOnClickListener {
+        btnProfileIcon.setOnClickListener {
             startActivity(Intent(this, ProfileActivity::class.java))
-        }
-
-        btnLocation.setOnClickListener {
-            startActivity(Intent(this, LocationActivity::class.java))
         }
 
         fabAddProduct.setOnClickListener {
@@ -189,6 +180,20 @@ class MainActivity : AppCompatActivity() {
                 recyclerView.scrollToPosition(previousCount - 1)
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        updateWelcomeText()
+    }
+
+    private fun updateWelcomeText() {
+        val prefs = getSharedPreferences("ShoplyPrefs", MODE_PRIVATE)
+        val username = prefs.getString("USERNAME", "") ?: ""
+        val displayName = prefs.getString("DISPLAY_NAME", "") ?: ""
+        val nameToShow = if (displayName.isNotBlank()) displayName else username
+
+        tvWelcome.text = if (nameToShow.isNotBlank()) "שלום, $nameToShow" else "שלום"
     }
 
     private fun applyFilter() {

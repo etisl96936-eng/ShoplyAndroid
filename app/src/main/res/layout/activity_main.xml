@@ -7,25 +7,39 @@
 
     <TextView
         android:id="@+id/tvWelcome"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="12dp"
+        android:layout_marginEnd="8dp"
         android:text="שלום"
         android:textSize="20sp"
         android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@id/btnProfileIcon"
         app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/btnProfileIcon"
+        app:layout_constraintTop_toTopOf="@id/btnProfileIcon" />
+
+    <ImageButton
+        android:id="@+id/btnProfileIcon"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="@android:color/transparent"
+        android:contentDescription="פרופיל משתמש"
+        android:padding="4dp"
+        android:src="@android:drawable/ic_menu_myplaces"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <EditText
         android:id="@+id/etSearch"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
         android:layout_marginEnd="8dp"
         android:hint="חפש מוצר להוספה..."
         android:inputType="text"
         app:layout_constraintEnd_toStartOf="@+id/spinnerCategory"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tvWelcome" />
+        app:layout_constraintTop_toBottomOf="@id/btnProfileIcon" />
 
     <Spinner
         android:id="@+id/spinnerCategory"
@@ -57,26 +71,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/btnViewList" />
 
-    <Button
-        android:id="@+id/btnProfile"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="צפה בפרופיל"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/btnStatistics" />
-
-    <Button
-        android:id="@+id/btnLocation"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="צפה במיקום"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/btnProfile" />
-
     <TextView
         android:id="@+id/tvAdminHint"
         android:layout_width="wrap_content"
@@ -88,7 +82,7 @@
         android:visibility="gone"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/btnLocation" />
+        app:layout_constraintTop_toBottomOf="@id/btnStatistics" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView"

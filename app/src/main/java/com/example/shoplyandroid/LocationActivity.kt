@@ -123,10 +123,20 @@ class LocationActivity : AppCompatActivity() {
         val lat = prefs.getString("LAST_LATITUDE", null)
         val lon = prefs.getString("LAST_LONGITUDE", null)
 
-        tvLocation.text = if (lat != null && lon != null) {
-            "מיקום שמור:\nLatitude: $lat\nLongitude: $lon"
+        if (lat != null && lon != null) {
+            tvLocation.text = "מיקום שמור:\nLatitude: $lat\nLongitude: $lon"
+
+            val latitude = lat.toDoubleOrNull()
+            val longitude = lon.toDoubleOrNull()
+
+            if (latitude != null && longitude != null) {
+                fetchWeather(latitude, longitude)
+            } else {
+                tvWeather.text = "המיקום השמור אינו תקין"
+            }
         } else {
-            "עדיין לא נשמר מיקום"
+            tvLocation.text = "עדיין לא נשמר מיקום"
+            tvWeather.text = "מזג אוויר עדיין לא נטען"
         }
     }
 }
