@@ -12,6 +12,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 class MainActivity : AppCompatActivity() {
 
@@ -26,6 +28,9 @@ class MainActivity : AppCompatActivity() {
     private var visibleItemCount = 5
     private val pageSize = 5
 
+    private val db = FirebaseFirestore.getInstance()
+    private val auth = FirebaseAuth.getInstance()
+
     private val startAdminActivity = registerForActivityResult(
         androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -37,31 +42,17 @@ class MainActivity : AppCompatActivity() {
                 val titleToDelete = data?.getStringExtra("DELETED_PRODUCT_TITLE")
                 catalogItems.removeAll { it.title == titleToDelete }
                 userShoppingList.removeAll { it.title == titleToDelete }
-
-                Toast.makeText(
-                    this@MainActivity,
-                    "המוצר נמחק מהקטלוג",
-                    Toast.LENGTH_SHORT
-                ).show()
+                Toast.makeText(this@MainActivity, "המוצר נמחק מהקטלוג", Toast.LENGTH_SHORT).show()
             } else {
                 val returnedItem = data?.getSerializableExtra("NEW_PRODUCT") as? ShoppingItem
                 returnedItem?.let { item ->
                     val existingIndex = catalogItems.indexOfFirst { it.title == item.title }
-
                     if (existingIndex != -1) {
                         catalogItems[existingIndex] = item
-                        Toast.makeText(
-                            this@MainActivity,
-                            "המוצר עודכן בקטלוג",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                        Toast.makeText(this@MainActivity, "המוצר עודכן בקטלוג", Toast.LENGTH_SHORT).show()
                     } else {
                         catalogItems.add(0, item)
-                        Toast.makeText(
-                            this@MainActivity,
-                            "המוצר נוסף לקטלוג",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                        Toast.makeText(this@MainActivity, "המוצר נוסף לקטלוג", Toast.LENGTH_SHORT).show()
                     }
                 }
             }
@@ -88,6 +79,7 @@ class MainActivity : AppCompatActivity() {
             findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.fabAddProduct)
         val tvAdminHint = findViewById<TextView>(R.id.tvAdminHint)
         val btnLoadMore = findViewById<Button>(R.id.btnLoadMore)
+        val btnLogout = findViewById<Button>(R.id.btnLogout)
 
         val prefs = getSharedPreferences("ShoplyPrefs", MODE_PRIVATE)
         val isAdmin = prefs.getBoolean("IS_ADMIN", false)
@@ -105,13 +97,8 @@ class MainActivity : AppCompatActivity() {
         loadItemsFromDisk()
 
         val categories = arrayOf(
-            "הכל",
-            "פירות וירקות",
-            "מוצרי חלב וביצים",
-            "ניקיון",
-            "מאפה ודגנים",
-            "שימורים ומזווה",
-            "בשר ודגים"
+            "הכל", "פירות וירקות", "מוצרי חלב וביצים",
+            "ניקיון", "מאפה ודגנים", "שימורים ומזווה", "בשר ודגים"
         )
 
         val spinnerAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, categories)
@@ -127,35 +114,26 @@ class MainActivity : AppCompatActivity() {
                 visibleItemCount = pageSize
                 applyFilter()
             }
-
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
         })
 
         spinnerCategory.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(
-                parent: AdapterView<*>?,
-                view: View?,
-                position: Int,
-                id: Long
-            ) {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 visibleItemCount = pageSize
                 applyFilter()
             }
-
             override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
 
         btnViewList.setOnClickListener {
             isShowingOnlyCart = !isShowingOnlyCart
             visibleItemCount = pageSize
-
             if (isShowingOnlyCart) {
                 btnViewList.setBackgroundColor(android.graphics.Color.GRAY)
             } else {
                 btnViewList.setBackgroundColor(android.graphics.Color.parseColor("#4CAF50"))
             }
-
             applyFilter()
             updateViewListButton()
         }
@@ -180,6 +158,15 @@ class MainActivity : AppCompatActivity() {
                 recyclerView.scrollToPosition(previousCount - 1)
             }
         }
+
+        btnLogout.setOnClickListener {
+            auth.signOut()
+            val prefsEdit = getSharedPreferences("ShoplyPrefs", MODE_PRIVATE).edit()
+            prefsEdit.clear()
+            prefsEdit.apply()
+            startActivity(Intent(this, LoginActivity::class.java))
+            finish()
+        }
     }
 
     override fun onResume() {
@@ -192,7 +179,6 @@ class MainActivity : AppCompatActivity() {
         val username = prefs.getString("USERNAME", "") ?: ""
         val displayName = prefs.getString("DISPLAY_NAME", "") ?: ""
         val nameToShow = if (displayName.isNotBlank()) displayName else username
-
         tvWelcome.text = if (nameToShow.isNotBlank()) "שלום, $nameToShow" else "שלום"
     }
 
@@ -204,7 +190,6 @@ class MainActivity : AppCompatActivity() {
 
         val query = etSearch.text.toString().trim().lowercase()
         val selectedCat = spinnerCategory.selectedItem?.toString() ?: "הכל"
-
         val baseList = if (isShowingOnlyCart) userShoppingList else catalogItems
 
         val filteredList = baseList.filter { item ->
@@ -217,21 +202,13 @@ class MainActivity : AppCompatActivity() {
             recyclerView.visibility = View.GONE
             tvEmptyState.visibility = View.VISIBLE
             btnLoadMore.visibility = View.GONE
-
-            tvEmptyState.text = if (isShowingOnlyCart) {
-                "רשימת הקניות שלך ריקה כרגע"
-            } else {
-                "לא נמצאו מוצרים"
-            }
+            tvEmptyState.text = if (isShowingOnlyCart) "רשימת הקניות שלך ריקה כרגע" else "לא נמצאו מוצרים"
         } else {
             recyclerView.visibility = View.VISIBLE
             tvEmptyState.visibility = View.GONE
-
             val visibleList = filteredList.take(visibleItemCount).toMutableList()
             updateAdapter(visibleList)
-
-            btnLoadMore.visibility =
-                if (filteredList.size > visibleItemCount) View.VISIBLE else View.GONE
+            btnLoadMore.visibility = if (filteredList.size > visibleItemCount) View.VISIBLE else View.GONE
         }
     }
 
@@ -253,7 +230,6 @@ class MainActivity : AppCompatActivity() {
 
     private fun toggleProduct(item: ShoppingItem) {
         val index = userShoppingList.indexOfFirst { it.title == item.title }
-
         if (index != -1) {
             userShoppingList.removeAt(index)
             Toast.makeText(this, "המוצר הוסר מרשימת הקניות", Toast.LENGTH_SHORT).show()
@@ -261,7 +237,6 @@ class MainActivity : AppCompatActivity() {
             userShoppingList.add(item)
             Toast.makeText(this, "המוצר נוסף לרשימת הקניות", Toast.LENGTH_SHORT).show()
         }
-
         saveItemsToDisk()
         updateViewListButton()
         applyFilter()
@@ -283,7 +258,6 @@ class MainActivity : AppCompatActivity() {
         saveItemsToDisk()
         applyFilter()
         updateViewListButton()
-
         Toast.makeText(this, "המוצר נמחק מהקטלוג", Toast.LENGTH_SHORT).show()
     }
 
@@ -295,19 +269,54 @@ class MainActivity : AppCompatActivity() {
 
     private fun openVideo(url: String) {
         if (url.isNotEmpty()) {
-            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-            startActivity(intent)
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
         } else {
             Toast.makeText(this, "אין וידאו זמין", Toast.LENGTH_SHORT).show()
         }
     }
 
     private fun saveItemsToDisk() {
+        // שמירה לוקאלית
         val prefs = getSharedPreferences("ShoplyPrefs", MODE_PRIVATE).edit()
         val gson = Gson()
         prefs.putString("saved_catalog", gson.toJson(catalogItems))
         prefs.putString("saved_user_list", gson.toJson(userShoppingList))
         prefs.apply()
+
+        // שמירה ל-Firestore
+        val uid = auth.currentUser?.uid ?: return
+
+        val catalogData = catalogItems.map { item ->
+            hashMapOf(
+                "title" to item.title,
+                "description" to item.description,
+                "category" to item.category,
+                "imageUrl" to item.imageUrl,
+                "videoUrl" to item.videoUrl
+            )
+        }
+
+        db.collection("catalog").document("items")
+            .set(hashMapOf("products" to catalogData))
+
+        db.collection("users").document(uid)
+            .collection("shoppingList")
+            .document("myList")
+            .set(hashMapOf("items" to userShoppingList.map { it.title }))
+    }
+
+    private fun loadUserShoppingList() {
+        val uid = auth.currentUser?.uid ?: return
+        db.collection("users").document(uid)
+            .collection("shoppingList")
+            .document("myList")
+            .get()
+            .addOnSuccessListener { doc ->
+                val titles = doc.get("items") as? List<String> ?: return@addOnSuccessListener
+                userShoppingList = catalogItems.filter { it.title in titles }.toMutableList()
+                updateViewListButton()
+                applyFilter()
+            }
     }
 
     private fun loadItemsFromDisk() {
@@ -315,45 +324,46 @@ class MainActivity : AppCompatActivity() {
         val gson = Gson()
         val type = object : TypeToken<MutableList<ShoppingItem>>() {}.type
 
+        // טעינה לוקאלית קודם
         val catalogJson = prefs.getString("saved_catalog", null)
         if (catalogJson != null) {
             catalogItems = gson.fromJson(catalogJson, type)
-        } else {
-            setupInitialCatalog()
         }
 
         val userListJson = prefs.getString("saved_user_list", null)
         if (userListJson != null) {
             userShoppingList = gson.fromJson(userListJson, type)
         }
-    }
 
-    private fun setupInitialCatalog() {
-        val vDairy = "https://www.youtube.com/watch?v=eSkBFNsQUis"
-        val vProduce = "https://www.youtube.com/watch?v=iRgFLeRcZE8"
-        val vCleaning = "https://www.youtube.com/shorts/sGdKLTpOoFo"
-        val vBakery = "https://www.youtube.com/watch?v=M1WmB0i4Pxc"
-        val vPantry = "https://www.youtube.com/watch?v=OlZRFpQQI58"
-        val vMeat = "https://www.youtube.com/shorts/JOF1_eEWGT8"
+        // טעינה מ-Firestore
+        db.collection("catalog").document("items")
+            .get()
+            .addOnSuccessListener { doc ->
+                val products = doc.get("products") as? List<Map<String, Any>> ?: return@addOnSuccessListener
+                if (products.isNotEmpty()) {
+                    catalogItems = products.map { map ->
+                        ShoppingItem(
+                            title = map["title"] as? String ?: "",
+                            description = map["description"] as? String ?: "",
+                            category = map["category"] as? String ?: "",
+                            imageUrl = map["imageUrl"] as? String ?: "",
+                            videoUrl = map["videoUrl"] as? String ?: "",
+                            imageRes = 0
+                        )
+                    }.toMutableList()
 
-        catalogItems = mutableListOf(
-            ShoppingItem("עגבנייה", "קילו עגבניות שרי", "פירות וירקות", "https://m.pricez.co.il/ProductPictures/200x/Pricez65717.jpg", vProduce, 0),
-            ShoppingItem("מלפפון", "קילו מלפפון מובחר", "פירות וירקות", "https://m.pricez.co.il/ProductPictures/200x/Pricez65716.jpg", vProduce, 0),
-            ShoppingItem("בננה", "מארז בננות", "פירות וירקות", "https://m.pricez.co.il/ProductPictures/200x/Pricez65907.jpg", vProduce, 0),
-            ShoppingItem("חלב 3%", "קרטון 1 ליטר תנובה", "מוצרי חלב וביצים", "https://m.pricez.co.il/ProductPictures/200x/7290000042442.jpg", vDairy, 0),
-            ShoppingItem("גבינה צהובה", "עמק 200 גרם", "מוצרי חלב וביצים", "https://m.pricez.co.il/ProductPictures/200x/7290000052311.jpg", vDairy, 0),
-            ShoppingItem("קוטג' 5%", "גביע 250 גרם", "מוצרי חלב וביצים", "https://m.pricez.co.il/ProductPictures/200x/7290004127329.jpg", vDairy, 0),
-            ShoppingItem("לחם פרוס", "אחיד פרוס אנג'ל", "מאפה ודגנים", "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT6ozOVUG7lZnZSGc3n6ATPNkMQY1zLsyIcFA&s", vBakery, 0),
-            ShoppingItem("פסטה פוסילי", "500 גרם ברילה", "מאפה ודגנים", "https://m.pricez.co.il/ProductPictures/200x/8076802085981.jpg", vBakery, 0),
-            ShoppingItem("קורנפלקס", "750 גרם תלמה", "מאפה ודגנים", "https://m.pricez.co.il/ProductPictures/200x/7290112494351.jpg", vBakery, 0),
-            ShoppingItem("קוקה קולה", "בקבוק 1.5 ליטר", "שימורים ומזווה", "https://m.pricez.co.il/ProductPictures/200x/7290110115203.jpg", vPantry, 0),
-            ShoppingItem("שמן זית", "750 מ\"ל יד מרדכי", "שימורים ומזווה", "https://m.pricez.co.il/ProductPictures/200x/7290010429554.jpg", vPantry, 0),
-            ShoppingItem("אורז פרסי", "1 קילו סוגת", "שימורים ומזווה", "https://m.pricez.co.il/ProductPictures/200x/7290000211442.jpg", vPantry, 0),
-            ShoppingItem("טונה בשמן", "מארז 4 יחידות", "בשר ודגים", "https://m.pricez.co.il/ProductPictures/200x/7290019196273.jpg", vMeat, 0),
-            ShoppingItem("נוזל כלים", "700 מ\"ל פיירי", "ניקיון", "https://m.pricez.co.il/ProductPictures/200x/8700216163811.jpg", vCleaning, 0),
-            ShoppingItem("נייר טואלט", "30 גלילים לילי", "ניקיון", "https://m.pricez.co.il/ProductPictures/200x/7290103702540.jpg", vCleaning, 0)
-        )
+                    val prefsEdit = getSharedPreferences("ShoplyPrefs", MODE_PRIVATE).edit()
+                    prefsEdit.putString("saved_catalog", gson.toJson(catalogItems))
+                    prefsEdit.apply()
 
-        saveItemsToDisk()
+                    // אחרי טעינת הקטלוג — טען את רשימת הקניות האישית
+                    loadUserShoppingList()
+                }
+            }
+            .addOnFailureListener {
+                // אם Firestore נכשל — השתמש בנתונים הלוקאליים
+                applyFilter()
+                updateViewListButton()
+            }
     }
 }
