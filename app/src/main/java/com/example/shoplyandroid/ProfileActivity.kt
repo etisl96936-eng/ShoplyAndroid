@@ -24,7 +24,9 @@ class ProfileActivity : AppCompatActivity() {
         val prefs = getSharedPreferences("ShoplyPrefs", MODE_PRIVATE)
         val username = prefs.getString("USERNAME", "לא ידוע") ?: "לא ידוע"
         val isAdmin = prefs.getBoolean("IS_ADMIN", false)
-        val savedDisplayName = prefs.getString("DISPLAY_NAME", "") ?: ""
+
+        val displayNameKey = "DISPLAY_NAME_$username"
+        val savedDisplayName = prefs.getString(displayNameKey, "") ?: ""
 
         val nameToShow = if (savedDisplayName.isNotBlank()) savedDisplayName else username
 
@@ -37,7 +39,7 @@ class ProfileActivity : AppCompatActivity() {
             val displayName = etDisplayName.text.toString().trim()
 
             prefs.edit()
-                .putString("DISPLAY_NAME", displayName)
+                .putString(displayNameKey, displayName)
                 .apply()
 
             val updatedName = if (displayName.isNotBlank()) displayName else username
