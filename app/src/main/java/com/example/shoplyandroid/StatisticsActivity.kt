@@ -4,11 +4,11 @@ import android.os.Bundle
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.github.mikephil.charting.charts.BarChart
+import com.github.mikephil.charting.components.XAxis
 import com.github.mikephil.charting.data.BarData
 import com.github.mikephil.charting.data.BarDataSet
 import com.github.mikephil.charting.data.BarEntry
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
-import com.github.mikephil.charting.components.XAxis
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 
@@ -16,6 +16,15 @@ class StatisticsActivity : AppCompatActivity() {
 
     private var catalogItems: MutableList<ShoppingItem> = mutableListOf()
     private var userShoppingList: MutableList<ShoppingItem> = mutableListOf()
+
+    private val allCategories = listOf(
+        "פירות וירקות",
+        "מוצרי חלב וביצים",
+        "ניקיון",
+        "מאפה ודגנים",
+        "שימורים ומזווה",
+        "בשר ודגים"
+    )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -31,31 +40,25 @@ class StatisticsActivity : AppCompatActivity() {
         tvTotalCatalog.text = "סה״כ מוצרים בקטלוג: ${catalogItems.size}"
         tvTotalCart.text = "סה״כ מוצרים ברשימת הקניות: ${userShoppingList.size}"
 
-        val categoryCounts = catalogItems.groupingBy { it.category }.eachCount()
+        val actualCounts = catalogItems.groupingBy { it.category }.eachCount()
 
-        val statsText = if (categoryCounts.isEmpty()) {
-            "אין נתונים להצגה"
-        } else {
-            buildString {
-                append("כמות מוצרים לפי קטגוריה:\n\n")
-                categoryCounts.forEach { (category, count) ->
-                    append("$category: $count\n")
-                }
+        val categoryCounts = linkedMapOf<String, Int>()
+        for (category in allCategories) {
+            categoryCounts[category] = actualCounts[category] ?: 0
+        }
+
+        val statsText = buildString {
+            append("כמות מוצרים לפי קטגוריה:\n\n")
+            categoryCounts.forEach { (category, count) ->
+                append("$category: $count\n")
             }
         }
 
         tvCategoryStats.text = statsText
-
         setupBarChart(barChart, categoryCounts)
     }
 
     private fun setupBarChart(barChart: BarChart, categoryCounts: Map<String, Int>) {
-        if (categoryCounts.isEmpty()) {
-            barChart.clear()
-            barChart.setNoDataText("אין נתונים לגרף")
-            return
-        }
-
         val categories = categoryCounts.keys.toList()
         val entries = categoryCounts.values.mapIndexed { index, count ->
             BarEntry(index.toFloat(), count.toFloat())
