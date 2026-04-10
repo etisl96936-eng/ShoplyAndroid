@@ -26,9 +26,8 @@ class LoginActivity : AppCompatActivity() {
             startActivity(Intent(this, RegisterActivity::class.java))
         }
 
-        // אם המשתמש כבר מחובר — נקפוץ ישירות למסך הראשי
         if (auth.currentUser != null) {
-            goToMain()
+            loadUserDataAndGoToMain()
             return
         }
 
@@ -50,35 +49,47 @@ class LoginActivity : AppCompatActivity() {
             }
 
             auth.signInWithEmailAndPassword(email, password)
-                .addOnSuccessListener { result ->
-                    val uid = result.user?.uid ?: return@addOnSuccessListener
-                    // נטען את התפקיד מ-Firestore
-                    db.collection("users").document(uid).get()
-                        .addOnSuccessListener { doc ->
-                            val role = doc.getString("role") ?: "user"
-                            val displayName = doc.getString("displayName") ?: ""
-
-                            val prefs = getSharedPreferences("ShoplyPrefs", MODE_PRIVATE).edit()
-                            prefs.putBoolean("IS_ADMIN", role == "admin")
-                            prefs.putString("USERNAME", email)
-                            prefs.putString("DISPLAY_NAME", displayName)
-                            prefs.apply()
-
-                            goToMain()
-                        }
-                        .addOnFailureListener {
-                            // אם אין מסמך — משתמש רגיל
-                            val prefs = getSharedPreferences("ShoplyPrefs", MODE_PRIVATE).edit()
-                            prefs.putBoolean("IS_ADMIN", false)
-                            prefs.putString("USERNAME", email)
-                            prefs.apply()
-                            goToMain()
-                        }
+                .addOnSuccessListener {
+                    loadUserDataAndGoToMain()
                 }
                 .addOnFailureListener { e ->
                     Toast.makeText(this, "שגיאה: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
                 }
         }
+    }
+
+    private fun loadUserDataAndGoToMain() {
+        val currentUser = auth.currentUser
+        val uid = currentUser?.uid
+        val email = currentUser?.email ?: ""
+
+        if (uid == null) {
+            goToMain()
+            return
+        }
+
+        db.collection("users").document(uid).get()
+            .addOnSuccessListener { doc ->
+                val role = doc.getString("role") ?: "user"
+                val displayName = doc.getString("displayName") ?: ""
+
+                val prefs = getSharedPreferences("ShoplyPrefs", MODE_PRIVATE).edit()
+                prefs.putBoolean("IS_ADMIN", role == "admin")
+                prefs.putString("USERNAME", email)
+                prefs.putString("DISPLAY_NAME", displayName)
+                prefs.apply()
+
+                goToMain()
+            }
+            .addOnFailureListener {
+                val prefs = getSharedPreferences("ShoplyPrefs", MODE_PRIVATE).edit()
+                prefs.putBoolean("IS_ADMIN", false)
+                prefs.putString("USERNAME", email)
+                prefs.putString("DISPLAY_NAME", "")
+                prefs.apply()
+
+                goToMain()
+            }
     }
 
     private fun goToMain() {

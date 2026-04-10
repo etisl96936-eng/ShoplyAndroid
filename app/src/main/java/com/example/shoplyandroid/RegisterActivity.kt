@@ -49,7 +49,6 @@ class RegisterActivity : AppCompatActivity() {
                 .addOnSuccessListener { result ->
                     val uid = result.user?.uid ?: return@addOnSuccessListener
 
-                    // שמירת פרטי המשתמש ב-Firestore עם תפקיד user
                     db.collection("users").document(uid).set(
                         hashMapOf(
                             "email" to email,
@@ -57,7 +56,6 @@ class RegisterActivity : AppCompatActivity() {
                             "role" to "user"
                         )
                     ).addOnSuccessListener {
-                        // שמירה לוקאלית
                         val prefs = getSharedPreferences("ShoplyPrefs", MODE_PRIVATE).edit()
                         prefs.putBoolean("IS_ADMIN", false)
                         prefs.putString("USERNAME", email)

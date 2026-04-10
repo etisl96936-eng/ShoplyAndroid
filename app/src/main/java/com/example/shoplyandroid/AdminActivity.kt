@@ -34,7 +34,6 @@ class AdminActivity : AppCompatActivity() {
         val btnDelete = findViewById<Button>(R.id.btnDelete)
 
         val categories = arrayOf(
-            "הכל",
             "פירות וירקות",
             "מוצרי חלב וביצים",
             "ניקיון",

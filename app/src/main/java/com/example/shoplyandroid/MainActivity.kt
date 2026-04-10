@@ -2,6 +2,7 @@ package com.example.shoplyandroid
 
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -10,11 +11,10 @@ import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import android.os.Build
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 
 class MainActivity : AppCompatActivity() {
 
@@ -58,7 +58,8 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-            saveItemsToDisk()
+            saveCatalog()
+            saveUserShoppingList()
             applyFilter()
             updateViewListButton()
         }
@@ -102,10 +103,10 @@ class MainActivity : AppCompatActivity() {
             "ניקיון", "מאפה ודגנים", "שימורים ומזווה", "בשר ודגים"
         )
 
-        // בקשת הרשאת התראות (Android 13+)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)
-                != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                != android.content.pm.PackageManager.PERMISSION_GRANTED
+            ) {
                 requestPermissions(
                     arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 100
                 )
@@ -125,6 +126,7 @@ class MainActivity : AppCompatActivity() {
                 visibleItemCount = pageSize
                 applyFilter()
             }
+
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
         })
@@ -134,6 +136,7 @@ class MainActivity : AppCompatActivity() {
                 visibleItemCount = pageSize
                 applyFilter()
             }
+
             override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
 
@@ -253,7 +256,8 @@ class MainActivity : AppCompatActivity() {
             userShoppingList.add(item)
             Toast.makeText(this, "המוצר נוסף לרשימת הקניות", Toast.LENGTH_SHORT).show()
         }
-        saveItemsToDisk()
+
+        saveUserShoppingList()
         updateViewListButton()
         applyFilter()
     }
@@ -269,11 +273,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun deleteItemFromCatalog(item: ShoppingItem) {
-        catalogItems.remove(item)
-        userShoppingList.remove(item)
-        saveItemsToDisk()
+        catalogItems.removeAll { it.title == item.title }
+        userShoppingList.removeAll { it.title == item.title }
+
+        saveCatalog()
+        saveUserShoppingList()
         applyFilter()
         updateViewListButton()
+
         Toast.makeText(this, "המוצר נמחק מהקטלוג", Toast.LENGTH_SHORT).show()
     }
 
@@ -291,16 +298,16 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun saveItemsToDisk() {
-        // שמירה לוקאלית
-        val prefs = getSharedPreferences("ShoplyPrefs", MODE_PRIVATE).edit()
+    private fun saveCatalog() {
         val gson = Gson()
+        val prefs = getSharedPreferences("ShoplyPrefs", MODE_PRIVATE).edit()
         prefs.putString("saved_catalog", gson.toJson(catalogItems))
-        prefs.putString("saved_user_list", gson.toJson(userShoppingList))
         prefs.apply()
 
-        // שמירה ל-Firestore
         val uid = auth.currentUser?.uid ?: return
+        val isAdmin = getSharedPreferences("ShoplyPrefs", MODE_PRIVATE).getBoolean("IS_ADMIN", false)
+
+        if (!isAdmin) return
 
         val catalogData = catalogItems.map { item ->
             hashMapOf(
@@ -312,8 +319,18 @@ class MainActivity : AppCompatActivity() {
             )
         }
 
-        db.collection("catalog").document("items")
+        db.collection("catalog")
+            .document("items")
             .set(hashMapOf("products" to catalogData))
+    }
+
+    private fun saveUserShoppingList() {
+        val gson = Gson()
+        val prefs = getSharedPreferences("ShoplyPrefs", MODE_PRIVATE).edit()
+        prefs.putString("saved_user_list", gson.toJson(userShoppingList))
+        prefs.apply()
+
+        val uid = auth.currentUser?.uid ?: return
 
         db.collection("users").document(uid)
             .collection("shoppingList")
@@ -323,13 +340,24 @@ class MainActivity : AppCompatActivity() {
 
     private fun loadUserShoppingList() {
         val uid = auth.currentUser?.uid ?: return
+
         db.collection("users").document(uid)
             .collection("shoppingList")
             .document("myList")
             .get()
             .addOnSuccessListener { doc ->
-                val titles = doc.get("items") as? List<String> ?: return@addOnSuccessListener
+                val titles = doc.get("items") as? List<String> ?: emptyList()
                 userShoppingList = catalogItems.filter { it.title in titles }.toMutableList()
+
+                val prefsEdit = getSharedPreferences("ShoplyPrefs", MODE_PRIVATE).edit()
+                val gson = Gson()
+                prefsEdit.putString("saved_user_list", gson.toJson(userShoppingList))
+                prefsEdit.apply()
+
+                updateViewListButton()
+                applyFilter()
+            }
+            .addOnFailureListener {
                 updateViewListButton()
                 applyFilter()
             }
@@ -340,7 +368,6 @@ class MainActivity : AppCompatActivity() {
         val gson = Gson()
         val type = object : TypeToken<MutableList<ShoppingItem>>() {}.type
 
-        // טעינה לוקאלית קודם
         val catalogJson = prefs.getString("saved_catalog", null)
         if (catalogJson != null) {
             catalogItems = gson.fromJson(catalogJson, type)
@@ -351,11 +378,13 @@ class MainActivity : AppCompatActivity() {
             userShoppingList = gson.fromJson(userListJson, type)
         }
 
-        // טעינה מ-Firestore
+        applyFilter()
+        updateViewListButton()
+
         db.collection("catalog").document("items")
             .get()
             .addOnSuccessListener { doc ->
-                val products = doc.get("products") as? List<Map<String, Any>> ?: return@addOnSuccessListener
+                val products = doc.get("products") as? List<Map<String, Any>> ?: emptyList()
                 if (products.isNotEmpty()) {
                     catalogItems = products.map { map ->
                         ShoppingItem(
@@ -371,13 +400,11 @@ class MainActivity : AppCompatActivity() {
                     val prefsEdit = getSharedPreferences("ShoplyPrefs", MODE_PRIVATE).edit()
                     prefsEdit.putString("saved_catalog", gson.toJson(catalogItems))
                     prefsEdit.apply()
-
-                    // אחרי טעינת הקטלוג — טען את רשימת הקניות האישית
-                    loadUserShoppingList()
                 }
+
+                loadUserShoppingList()
             }
             .addOnFailureListener {
-                // אם Firestore נכשל — השתמש בנתונים הלוקאליים
                 applyFilter()
                 updateViewListButton()
             }

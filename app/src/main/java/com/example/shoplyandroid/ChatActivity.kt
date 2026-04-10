@@ -1,21 +1,22 @@
 package com.example.shoplyandroid
 
 import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
-import android.widget.TextView
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
 
 class ChatActivity : AppCompatActivity() {
 
@@ -91,7 +92,9 @@ class ChatActivity : AppCompatActivity() {
                     messages.add(msg)
                 }
                 chatAdapter.notifyDataSetChanged()
-                rvMessages.scrollToPosition(messages.size - 1)
+                if (messages.isNotEmpty()) {
+                    rvMessages.scrollToPosition(messages.size - 1)
+                }
             }
     }
 }

@@ -7,8 +7,13 @@ import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 class ProfileActivity : AppCompatActivity() {
+
+    private val auth = FirebaseAuth.getInstance()
+    private val db = FirebaseFirestore.getInstance()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -25,9 +30,7 @@ class ProfileActivity : AppCompatActivity() {
         val username = prefs.getString("USERNAME", "לא ידוע") ?: "לא ידוע"
         val isAdmin = prefs.getBoolean("IS_ADMIN", false)
 
-        val displayNameKey = "DISPLAY_NAME_$username"
-        val savedDisplayName = prefs.getString(displayNameKey, "") ?: ""
-
+        val savedDisplayName = prefs.getString("DISPLAY_NAME", "") ?: ""
         val nameToShow = if (savedDisplayName.isNotBlank()) savedDisplayName else username
 
         tvProfileGreeting.text = "שלום, $nameToShow"
@@ -37,15 +40,30 @@ class ProfileActivity : AppCompatActivity() {
 
         btnSaveProfile.setOnClickListener {
             val displayName = etDisplayName.text.toString().trim()
+            val updatedName = if (displayName.isNotBlank()) displayName else username
 
             prefs.edit()
-                .putString(displayNameKey, displayName)
+                .putString("DISPLAY_NAME", displayName)
                 .apply()
 
-            val updatedName = if (displayName.isNotBlank()) displayName else username
-            tvProfileGreeting.text = "שלום, $updatedName"
+            val uid = auth.currentUser?.uid
+            if (uid == null) {
+                tvProfileGreeting.text = "שלום, $updatedName"
+                Toast.makeText(this, "הפרופיל נשמר בהצלחה", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
 
-            Toast.makeText(this, "הפרופיל נשמר בהצלחה", Toast.LENGTH_SHORT).show()
+            db.collection("users")
+                .document(uid)
+                .update("displayName", displayName)
+                .addOnSuccessListener {
+                    tvProfileGreeting.text = "שלום, $updatedName"
+                    Toast.makeText(this, "הפרופיל נשמר בהצלחה", Toast.LENGTH_SHORT).show()
+                }
+                .addOnFailureListener {
+                    tvProfileGreeting.text = "שלום, $updatedName"
+                    Toast.makeText(this, "השם נשמר מקומית, אך לא עודכן בענן", Toast.LENGTH_SHORT).show()
+                }
         }
 
         btnLocation.setOnClickListener {
