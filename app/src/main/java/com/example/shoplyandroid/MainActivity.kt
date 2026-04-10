@@ -61,6 +61,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
+            visibleItemCount = pageSize
             saveCatalog()
             saveUserShoppingList()
             applyFilter()
@@ -321,6 +322,7 @@ class MainActivity : AppCompatActivity() {
         catalogItems.removeAll { it.title == item.title }
         userShoppingList.removeAll { it.title == item.title }
 
+        visibleItemCount = pageSize
         saveCatalog()
         saveUserShoppingList()
         applyFilter()
@@ -398,10 +400,12 @@ class MainActivity : AppCompatActivity() {
                 prefsEdit.putString("saved_user_list", gson.toJson(userShoppingList))
                 prefsEdit.apply()
 
+                visibleItemCount = pageSize
                 updateViewListButton()
                 applyFilter()
             }
             .addOnFailureListener {
+                visibleItemCount = pageSize
                 updateViewListButton()
                 applyFilter()
             }
@@ -422,6 +426,7 @@ class MainActivity : AppCompatActivity() {
             userShoppingList = gson.fromJson(userListJson, type)
         }
 
+        visibleItemCount = pageSize
         applyFilter()
         updateViewListButton()
 
@@ -446,9 +451,11 @@ class MainActivity : AppCompatActivity() {
                     prefsEdit.apply()
                 }
 
+                visibleItemCount = pageSize
                 loadUserShoppingList()
             }
             .addOnFailureListener {
+                visibleItemCount = pageSize
                 applyFilter()
                 updateViewListButton()
             }
