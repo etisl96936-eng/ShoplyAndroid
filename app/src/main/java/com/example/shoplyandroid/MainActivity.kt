@@ -6,6 +6,7 @@ import android.os.Build
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.view.MotionEvent
 import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
@@ -28,6 +29,8 @@ class MainActivity : AppCompatActivity() {
 
     private var visibleItemCount = 5
     private val pageSize = 5
+
+    private var suppressNextSpinnerSelection = false
 
     private val db = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
@@ -99,8 +102,13 @@ class MainActivity : AppCompatActivity() {
         loadItemsFromDisk()
 
         val categories = arrayOf(
-            "הכל", "פירות וירקות", "מוצרי חלב וביצים",
-            "ניקיון", "מאפה ודגנים", "שימורים ומזווה", "בשר ודגים"
+            "הכל",
+            "פירות וירקות",
+            "מוצרי חלב וביצים",
+            "ניקיון",
+            "מאפה ודגנים",
+            "שימורים ומזווה",
+            "בשר ודגים"
         )
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -133,6 +141,17 @@ class MainActivity : AppCompatActivity() {
 
         spinnerCategory.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                if (suppressNextSpinnerSelection) {
+                    suppressNextSpinnerSelection = false
+                    return
+                }
+
+                if (isShowingOnlyCart) {
+                    isShowingOnlyCart = false
+                    btnViewList.setBackgroundColor(android.graphics.Color.parseColor("#4CAF50"))
+                    updateViewListButton()
+                }
+
                 visibleItemCount = pageSize
                 applyFilter()
             }
@@ -140,14 +159,31 @@ class MainActivity : AppCompatActivity() {
             override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
 
+        spinnerCategory.setOnTouchListener { _, event ->
+            if (
+                event.action == MotionEvent.ACTION_DOWN &&
+                isShowingOnlyCart &&
+                spinnerCategory.selectedItem?.toString() == "הכל"
+            ) {
+                suppressNextSpinnerSelection = true
+                if (spinnerCategory.adapter.count > 1) {
+                    spinnerCategory.setSelection(1, false)
+                }
+            }
+            false
+        }
+
         btnViewList.setOnClickListener {
             isShowingOnlyCart = !isShowingOnlyCart
             visibleItemCount = pageSize
+
             if (isShowingOnlyCart) {
                 btnViewList.setBackgroundColor(android.graphics.Color.GRAY)
+                etSearch.text?.clear()
             } else {
                 btnViewList.setBackgroundColor(android.graphics.Color.parseColor("#4CAF50"))
             }
+
             applyFilter()
             updateViewListButton()
         }
@@ -208,20 +244,29 @@ class MainActivity : AppCompatActivity() {
         val btnLoadMore = findViewById<Button>(R.id.btnLoadMore)
 
         val query = etSearch.text.toString().trim().lowercase()
-        val selectedCat = spinnerCategory.selectedItem?.toString() ?: "הכל"
-        val baseList = if (isShowingOnlyCart) userShoppingList else catalogItems
 
-        val filteredList = baseList.filter { item ->
-            val matchesQuery = item.title.lowercase().contains(query)
-            val matchesCat = selectedCat == "הכל" || item.category == selectedCat
-            matchesQuery && matchesCat
-        }.toMutableList()
+        val filteredList = if (isShowingOnlyCart) {
+            userShoppingList.filter { item ->
+                item.title.lowercase().contains(query)
+            }.toMutableList()
+        } else {
+            val selectedCat = spinnerCategory.selectedItem?.toString() ?: "הכל"
+            catalogItems.filter { item ->
+                val matchesQuery = item.title.lowercase().contains(query)
+                val matchesCat = selectedCat == "הכל" || item.category == selectedCat
+                matchesQuery && matchesCat
+            }.toMutableList()
+        }
 
         if (filteredList.isEmpty()) {
             recyclerView.visibility = View.GONE
             tvEmptyState.visibility = View.VISIBLE
             btnLoadMore.visibility = View.GONE
-            tvEmptyState.text = if (isShowingOnlyCart) "רשימת הקניות שלך ריקה כרגע" else "לא נמצאו מוצרים"
+            tvEmptyState.text = if (isShowingOnlyCart) {
+                "רשימת הקניות שלך ריקה כרגע"
+            } else {
+                "לא נמצאו מוצרים"
+            }
         } else {
             recyclerView.visibility = View.VISIBLE
             tvEmptyState.visibility = View.GONE
@@ -304,9 +349,8 @@ class MainActivity : AppCompatActivity() {
         prefs.putString("saved_catalog", gson.toJson(catalogItems))
         prefs.apply()
 
-        val uid = auth.currentUser?.uid ?: return
-        val isAdmin = getSharedPreferences("ShoplyPrefs", MODE_PRIVATE).getBoolean("IS_ADMIN", false)
-
+        val isAdmin = getSharedPreferences("ShoplyPrefs", MODE_PRIVATE)
+            .getBoolean("IS_ADMIN", false)
         if (!isAdmin) return
 
         val catalogData = catalogItems.map { item ->
