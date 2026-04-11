@@ -69,6 +69,16 @@
             android:layout_marginBottom="12dp" />
 
         <Button
+            android:id="@+id/btnGoogleSignIn"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:text="התחברות עם Google"
+            android:textSize="16sp"
+            android:backgroundTint="#FFFFFF"
+            android:textColor="#444444"
+            android:layout_marginBottom="12dp" />
+
+        <Button
             android:id="@+id/btnGoToRegister"
             android:layout_width="match_parent"
             android:layout_height="60dp"

@@ -2,17 +2,35 @@ package com.example.shoplyandroid
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Patterns
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.credentials.Credential
+import androidx.credentials.CredentialManager
+import androidx.credentials.CustomCredential
+import androidx.credentials.GetCredentialRequest
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class LoginActivity : AppCompatActivity() {
 
     private lateinit var auth: FirebaseAuth
     private lateinit var db: FirebaseFirestore
+
+    private lateinit var etUsername: EditText
+    private lateinit var etPassword: EditText
+    private lateinit var btnLogin: Button
+    private lateinit var btnGoToRegister: Button
+    private lateinit var btnGoogleSignIn: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -21,10 +39,11 @@ class LoginActivity : AppCompatActivity() {
         auth = FirebaseAuth.getInstance()
         db = FirebaseFirestore.getInstance()
 
-        val btnGoToRegister = findViewById<Button>(R.id.btnGoToRegister)
-        val etUsername = findViewById<EditText>(R.id.etUsername)
-        val etPassword = findViewById<EditText>(R.id.etPassword)
-        val btnLogin = findViewById<Button>(R.id.btnLogin)
+        etUsername = findViewById(R.id.etUsername)
+        etPassword = findViewById(R.id.etPassword)
+        btnLogin = findViewById(R.id.btnLogin)
+        btnGoToRegister = findViewById(R.id.btnGoToRegister)
+        btnGoogleSignIn = findViewById(R.id.btnGoogleSignIn)
 
         btnGoToRegister.setOnClickListener {
             startActivity(Intent(this, RegisterActivity::class.java))
@@ -36,33 +55,171 @@ class LoginActivity : AppCompatActivity() {
         }
 
         btnLogin.setOnClickListener {
-            val email = etUsername.text.toString().trim()
-            val password = etPassword.text.toString().trim()
-
-            if (email.isEmpty()) {
-                etUsername.error = "חובה להזין אימייל"
-                etUsername.requestFocus()
-                return@setOnClickListener
-            }
-
-            if (password.isEmpty()) {
-                etPassword.error = "חובה להזין סיסמה"
-                etPassword.requestFocus()
-                return@setOnClickListener
-            }
-
-            auth.signInWithEmailAndPassword(email, password)
-                .addOnSuccessListener {
-                    loadUserDataAndGoToMain()
-                }
-                .addOnFailureListener { e ->
-                    Toast.makeText(
-                        this,
-                        "התחברות נכשלה: ${e.localizedMessage}",
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
+            loginWithEmailPassword()
         }
+
+        btnGoogleSignIn.setOnClickListener {
+            signInWithGoogle()
+        }
+    }
+
+    private fun loginWithEmailPassword() {
+        val email = etUsername.text.toString().trim()
+        val password = etPassword.text.toString().trim()
+
+        if (email.isEmpty()) {
+            etUsername.error = "חובה להזין אימייל"
+            etUsername.requestFocus()
+            return
+        }
+
+        if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            etUsername.error = "אימייל לא תקין"
+            etUsername.requestFocus()
+            return
+        }
+
+        if (password.isEmpty()) {
+            etPassword.error = "חובה להזין סיסמה"
+            etPassword.requestFocus()
+            return
+        }
+
+        auth.signInWithEmailAndPassword(email, password)
+            .addOnSuccessListener {
+                loadUserDataAndGoToMain()
+            }
+            .addOnFailureListener { e ->
+                Toast.makeText(
+                    this,
+                    "התחברות נכשלה: ${e.localizedMessage}",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+    }
+
+    private fun signInWithGoogle() {
+        val googleIdOption = GetGoogleIdOption.Builder()
+            .setFilterByAuthorizedAccounts(false)
+            .setServerClientId(getString(R.string.default_web_client_id))
+            .setAutoSelectEnabled(false)
+            .build()
+
+        val request = GetCredentialRequest.Builder()
+            .addCredentialOption(googleIdOption)
+            .build()
+
+        val credentialManager = CredentialManager.create(this)
+
+        CoroutineScope(Dispatchers.Main).launch {
+            try {
+                val result = credentialManager.getCredential(
+                    context = this@LoginActivity,
+                    request = request
+                )
+                handleGoogleCredential(result.credential)
+            } catch (e: Exception) {
+                Toast.makeText(
+                    this@LoginActivity,
+                    "התחברות עם Google נכשלה: ${e.localizedMessage}",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
+    }
+
+    private fun handleGoogleCredential(credential: Credential) {
+        if (
+            credential is CustomCredential &&
+            credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
+        ) {
+            try {
+                val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
+                firebaseAuthWithGoogle(googleIdTokenCredential.idToken)
+            } catch (e: GoogleIdTokenParsingException) {
+                Toast.makeText(
+                    this,
+                    "שגיאה בקריאת פרטי Google",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        } else {
+            Toast.makeText(
+                this,
+                "סוג ההתחברות שהתקבל אינו נתמך",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+
+    private fun firebaseAuthWithGoogle(idToken: String) {
+        val firebaseCredential = GoogleAuthProvider.getCredential(idToken, null)
+
+        auth.signInWithCredential(firebaseCredential)
+            .addOnSuccessListener { result ->
+                val user = result.user
+
+                if (user == null) {
+                    Toast.makeText(this, "לא התקבל משתמש מ-Google", Toast.LENGTH_LONG).show()
+                    return@addOnSuccessListener
+                }
+
+                createOrUpdateGoogleUser(
+                    uid = user.uid,
+                    email = user.email ?: "",
+                    displayName = user.displayName ?: ""
+                )
+            }
+            .addOnFailureListener { e ->
+                Toast.makeText(
+                    this,
+                    "התחברות Firebase עם Google נכשלה: ${e.localizedMessage}",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+    }
+
+    private fun createOrUpdateGoogleUser(uid: String, email: String, displayName: String) {
+        val userRef = db.collection("users").document(uid)
+
+        userRef.get()
+            .addOnSuccessListener { document ->
+                if (document.exists()) {
+                    userRef.update(
+                        mapOf(
+                            "email" to email,
+                            "displayName" to displayName
+                        )
+                    ).addOnCompleteListener {
+                        loadUserDataAndGoToMain()
+                    }
+                } else {
+                    val userData = hashMapOf(
+                        "email" to email,
+                        "displayName" to displayName,
+                        "role" to "user"
+                    )
+
+                    userRef.set(userData)
+                        .addOnSuccessListener {
+                            loadUserDataAndGoToMain()
+                        }
+                        .addOnFailureListener { e ->
+                            Toast.makeText(
+                                this,
+                                "שמירת משתמש נכשלה: ${e.localizedMessage}",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+                }
+            }
+            .addOnFailureListener { e ->
+                Toast.makeText(
+                    this,
+                    "קריאת נתוני משתמש נכשלה: ${e.localizedMessage}",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
     }
 
     private fun loadUserDataAndGoToMain() {

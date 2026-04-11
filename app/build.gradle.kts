@@ -3,7 +3,6 @@ plugins {
     alias(libs.plugins.kotlin.android)
     id("org.jetbrains.kotlin.kapt")
     id("com.google.gms.google-services")
-
 }
 
 android {
@@ -13,7 +12,7 @@ android {
     defaultConfig {
         applicationId = "com.example.shoplyandroid"
         minSdk = 24
-        targetSdk = 35 // שיניתי ל-35 כדי להתאים ל-CompileSdk
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
@@ -29,50 +28,52 @@ android {
             )
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+
     kotlinOptions {
         jvmTarget = "11"
     }
+
     buildFeatures {
-        compose = false // מצוין שביטלת את זה
+        compose = false
     }
 }
 
 dependencies {
-    implementation("androidx.core:core-ktx:1.13.1") // גרסה יציבה שלא דורשת 36
+    implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("com.google.android.material:material:1.12.0")
-    implementation("androidx.activity:activity-ktx:1.9.3") // גרסה יציבה שלא דורשת 36
+    implementation("androidx.activity:activity-ktx:1.9.3")
+    implementation("androidx.constraintlayout:constraintlayout:2.2.0")
+    implementation("androidx.recyclerview:recyclerview:1.3.2")
+
     implementation("com.google.code.gson:gson:2.10.1")
+
     implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
+
     implementation("com.google.android.gms:play-services-location:21.3.0")
+
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
     implementation("com.squareup.retrofit2:converter-gson:2.11.0")
+
+    implementation("com.github.bumptech.glide:glide:4.16.0")
+    kapt("com.github.bumptech.glide:compiler:4.16.0")
 
     implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
     implementation("com.google.firebase:firebase-auth-ktx")
     implementation("com.google.firebase:firebase-firestore-ktx")
-
     implementation("com.google.firebase:firebase-messaging-ktx")
 
-    // RecyclerView - להצגת הרשימה
-    implementation("androidx.recyclerview:recyclerview:1.3.2")
+    implementation("androidx.credentials:credentials:1.3.0")
+    implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
 
-    // Glide - לטעינת תמונות
-    implementation("com.github.bumptech.glide:glide:4.16.0")
-
-    // ConstraintLayout - לעיצוב
-    implementation("androidx.constraintlayout:constraintlayout:2.2.0")
-    // Glide - ספרייה לטעינת תמונות מהאינטרנט
-    implementation("com.github.bumptech.glide:glide:4.15.1")
-    kapt("com.github.bumptech.glide:compiler:4.15.1")
-
-    // בדיקות
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
-    implementation("com.google.code.gson:gson:2.10.1")
 }
