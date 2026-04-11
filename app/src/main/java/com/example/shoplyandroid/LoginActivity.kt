@@ -22,6 +22,10 @@ class LoginActivity : AppCompatActivity() {
         db = FirebaseFirestore.getInstance()
 
         val btnGoToRegister = findViewById<Button>(R.id.btnGoToRegister)
+        val etUsername = findViewById<EditText>(R.id.etUsername)
+        val etPassword = findViewById<EditText>(R.id.etPassword)
+        val btnLogin = findViewById<Button>(R.id.btnLogin)
+
         btnGoToRegister.setOnClickListener {
             startActivity(Intent(this, RegisterActivity::class.java))
         }
@@ -31,20 +35,19 @@ class LoginActivity : AppCompatActivity() {
             return
         }
 
-        val etUsername = findViewById<EditText>(R.id.etUsername)
-        val etPassword = findViewById<EditText>(R.id.etPassword)
-        val btnLogin = findViewById<Button>(R.id.btnLogin)
-
         btnLogin.setOnClickListener {
             val email = etUsername.text.toString().trim()
             val password = etPassword.text.toString().trim()
 
             if (email.isEmpty()) {
                 etUsername.error = "חובה להזין אימייל"
+                etUsername.requestFocus()
                 return@setOnClickListener
             }
+
             if (password.isEmpty()) {
                 etPassword.error = "חובה להזין סיסמה"
+                etPassword.requestFocus()
                 return@setOnClickListener
             }
 
@@ -53,7 +56,11 @@ class LoginActivity : AppCompatActivity() {
                     loadUserDataAndGoToMain()
                 }
                 .addOnFailureListener { e ->
-                    Toast.makeText(this, "שגיאה: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                    Toast.makeText(
+                        this,
+                        "התחברות נכשלה: ${e.localizedMessage}",
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
         }
     }
@@ -68,7 +75,9 @@ class LoginActivity : AppCompatActivity() {
             return
         }
 
-        db.collection("users").document(uid).get()
+        db.collection("users")
+            .document(uid)
+            .get()
             .addOnSuccessListener { doc ->
                 val role = doc.getString("role") ?: "user"
                 val displayName = doc.getString("displayName") ?: ""
