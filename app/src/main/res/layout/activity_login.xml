@@ -17,7 +17,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <!-- לוגו ותיאור -->
         <TextView
             android:id="@+id/appName"
             android:layout_width="wrap_content"
@@ -37,7 +36,6 @@
             android:textColor="#757575"
             android:layout_marginBottom="36dp" />
 
-        <!-- כרטיס הטופס -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -92,37 +90,31 @@
                     android:textSize="17sp"
                     android:textStyle="bold"
                     android:backgroundTint="#4CAF50"
-                    android:textColor="@android:color/white"
-                    app:cornerRadius="12dp" />
+                    android:textColor="@android:color/white" />
 
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- כפתור Google רשמי -->
         <com.google.android.gms.common.SignInButton
             android:id="@+id/btnGoogleSignIn"
             android:layout_width="match_parent"
             android:layout_height="52dp"
             android:layout_marginBottom="12dp" />
 
-        <!-- קו מפריד -->
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
             android:background="#E0E0E0"
             android:layout_marginBottom="4dp" />
 
-        <!-- כפתור הרשמה כטקסט בלבד -->
-        <com.google.android.material.button.MaterialButton
+        <Button
             android:id="@+id/btnGoToRegister"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="משתמש חדש? הירשם כאן"
             android:textSize="15sp"
             android:textColor="#4CAF50"
-            app:strokeWidth="0dp"
-            android:backgroundTint="@android:color/transparent"
-            style="@style/Widget.MaterialComponents.Button.TextButton" />
+            android:backgroundTint="@android:color/transparent" />
 
     </LinearLayout>
 
