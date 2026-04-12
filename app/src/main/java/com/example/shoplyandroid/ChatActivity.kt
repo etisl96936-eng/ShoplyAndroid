@@ -18,6 +18,11 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+/**
+ * מסך צ'אט קבוצתי בזמן אמת.
+ * כל משתמשי האפליקציה יכולים לשלוח ולקבל הודעות.
+ * ההודעות נשמרות ב-Firestore ומסונכרנות בזמן אמת באמצעות Snapshot Listener.
+ */
 class ChatActivity : AppCompatActivity() {
 
     private lateinit var rvMessages: RecyclerView
@@ -49,6 +54,10 @@ class ChatActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * שולח הודעה חדשה לאוסף "chat" ב-Firestore.
+     * מזהה את שם השולח מ-SharedPreferences ושומר את ההודעה עם חותמת זמן.
+     */
     private fun sendMessage() {
         val text = etMessage.text.toString().trim()
         if (text.isEmpty()) return
@@ -75,6 +84,10 @@ class ChatActivity : AppCompatActivity() {
             }
     }
 
+    /**
+     * מאזין לשינויים באוסף "chat" ב-Firestore בזמן אמת.
+     * מעדכן את רשימת ההודעות ומגלל לתחתית בכל עדכון.
+     */
     private fun listenToMessages() {
         db.collection("chat")
             .orderBy("timestamp", Query.Direction.ASCENDING)
@@ -99,11 +112,21 @@ class ChatActivity : AppCompatActivity() {
     }
 }
 
+/**
+ * Adapter להצגת הודעות הצ'אט ב-RecyclerView.
+ * מבדיל בין הודעות המשתמש הנוכחי לבין הודעות אחרים.
+ *
+ * @param messages רשימת ההודעות להצגה
+ * @param currentUserId ה-UID של המשתמש המחובר לזיהוי הודעות עצמו
+ */
 class ChatAdapter(
     private val messages: List<ChatMessage>,
     private val currentUserId: String
 ) : RecyclerView.Adapter<ChatAdapter.ChatViewHolder>() {
 
+    /**
+     * ViewHolder המחזיק את רכיבי ה-UI של פריט הודעה בודד.
+     */
     class ChatViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val tvSenderName: TextView = view.findViewById(R.id.tvSenderName)
         val tvMessageText: TextView = view.findViewById(R.id.tvMessageText)
@@ -116,6 +139,10 @@ class ChatAdapter(
         return ChatViewHolder(view)
     }
 
+    /**
+     * ממלא את נתוני ההודעה ב-ViewHolder.
+     * אם השולח הוא המשתמש הנוכחי — מציג "אני" במקום השם.
+     */
     override fun onBindViewHolder(holder: ChatViewHolder, position: Int) {
         val msg = messages[position]
         holder.tvSenderName.text = if (msg.senderId == currentUserId) "אני" else msg.senderName

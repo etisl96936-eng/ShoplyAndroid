@@ -17,6 +17,12 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 
+/**
+ * המסך הראשי של האפליקציה.
+ * מציג את קטלוג המוצרים, מאפשר חיפוש וסינון לפי קטגוריה,
+ * ניהול רשימת קניות אישית, וניווט למסכים נוספים.
+ * נתוני הקטלוג נשמרים ב-Firestore ומסונכרנים עם SharedPreferences כגיבוי מקומי.
+ */
 class MainActivity : AppCompatActivity() {
 
     private lateinit var adapter: ShoppingAdapter
@@ -92,6 +98,7 @@ class MainActivity : AppCompatActivity() {
 
         updateWelcomeText()
 
+        // הסתרת/הצגת אפשרויות ניהול לפי תפקיד המשתמש
         if (isAdmin) {
             fabAddProduct.visibility = View.VISIBLE
             tvAdminHint.visibility = View.VISIBLE
@@ -103,15 +110,11 @@ class MainActivity : AppCompatActivity() {
         loadItemsFromDisk()
 
         val categories = arrayOf(
-            "הכל",
-            "פירות וירקות",
-            "מוצרי חלב וביצים",
-            "ניקיון",
-            "מאפה ודגנים",
-            "שימורים ומזווה",
-            "בשר ודגים"
+            "הכל", "פירות וירקות", "מוצרי חלב וביצים",
+            "ניקיון", "מאפה ודגנים", "שימורים ומזווה", "בשר ודגים"
         )
 
+        // בקשת הרשאת התראות עבור Android 13 ומעלה
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)
                 != android.content.pm.PackageManager.PERMISSION_GRANTED
@@ -135,7 +138,6 @@ class MainActivity : AppCompatActivity() {
                 visibleItemCount = pageSize
                 applyFilter()
             }
-
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
         })
@@ -146,23 +148,19 @@ class MainActivity : AppCompatActivity() {
                     suppressNextSpinnerSelection = false
                     return
                 }
-
                 if (isShowingOnlyCart) {
                     isShowingOnlyCart = false
                     btnViewList.setBackgroundColor(android.graphics.Color.parseColor("#4CAF50"))
                     updateViewListButton()
                 }
-
                 visibleItemCount = pageSize
                 applyFilter()
             }
-
             override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
 
         spinnerCategory.setOnTouchListener { _, event ->
-            if (
-                event.action == MotionEvent.ACTION_DOWN &&
+            if (event.action == MotionEvent.ACTION_DOWN &&
                 isShowingOnlyCart &&
                 spinnerCategory.selectedItem?.toString() == "הכל"
             ) {
@@ -177,14 +175,12 @@ class MainActivity : AppCompatActivity() {
         btnViewList.setOnClickListener {
             isShowingOnlyCart = !isShowingOnlyCart
             visibleItemCount = pageSize
-
             if (isShowingOnlyCart) {
                 btnViewList.setBackgroundColor(android.graphics.Color.GRAY)
                 etSearch.text?.clear()
             } else {
                 btnViewList.setBackgroundColor(android.graphics.Color.parseColor("#4CAF50"))
             }
-
             applyFilter()
             updateViewListButton()
         }
@@ -230,6 +226,10 @@ class MainActivity : AppCompatActivity() {
         updateWelcomeText()
     }
 
+    /**
+     * מעדכן את טקסט הברכה בראש המסך לפי שם המשתמש המחובר.
+     * מעדיף שם תצוגה אם קיים, אחרת מציג את שם המשתמש (אימייל).
+     */
     private fun updateWelcomeText() {
         val prefs = getSharedPreferences("ShoplyPrefs", MODE_PRIVATE)
         val username = prefs.getString("USERNAME", "") ?: ""
@@ -238,6 +238,12 @@ class MainActivity : AppCompatActivity() {
         tvWelcome.text = if (nameToShow.isNotBlank()) "שלום, $nameToShow" else "שלום"
     }
 
+    /**
+     * מסנן את רשימת המוצרים לפי טקסט חיפוש וקטגוריה נבחרת.
+     * אם מוצגת רשימת הקניות — מסנן רק לפי טקסט.
+     * מטפל במצב ריק על ידי הצגת הודעה מתאימה.
+     * מציג כפתור "טען עוד" אם יש מוצרים נוספים מעבר למכסה הנוכחית.
+     */
     private fun applyFilter() {
         val etSearch = findViewById<EditText>(R.id.etSearch)
         val spinnerCategory = findViewById<Spinner>(R.id.spinnerCategory)
@@ -263,11 +269,7 @@ class MainActivity : AppCompatActivity() {
             recyclerView.visibility = View.GONE
             tvEmptyState.visibility = View.VISIBLE
             btnLoadMore.visibility = View.GONE
-            tvEmptyState.text = if (isShowingOnlyCart) {
-                "רשימת הקניות שלך ריקה כרגע"
-            } else {
-                "לא נמצאו מוצרים"
-            }
+            tvEmptyState.text = if (isShowingOnlyCart) "רשימת הקניות שלך ריקה כרגע" else "לא נמצאו מוצרים"
         } else {
             recyclerView.visibility = View.VISIBLE
             tvEmptyState.visibility = View.GONE
@@ -277,6 +279,12 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * יוצר ומגדיר את ה-Adapter של ה-RecyclerView עם הרשימה הנוכחית.
+     * מעביר callbacks לפעולות: הוספה לרשימה, פתיחת וידאו, עריכה ומחיקה.
+     *
+     * @param newList רשימת המוצרים להצגה
+     */
     private fun updateAdapter(newList: MutableList<ShoppingItem>) {
         val prefs = getSharedPreferences("ShoplyPrefs", MODE_PRIVATE)
         val isAdmin = prefs.getBoolean("IS_ADMIN", false)
@@ -293,6 +301,12 @@ class MainActivity : AppCompatActivity() {
         recyclerView.adapter = adapter
     }
 
+    /**
+     * מוסיף או מסיר מוצר מרשימת הקניות האישית של המשתמש.
+     * שומר את השינוי ב-Firestore ומעדכן את הממשק.
+     *
+     * @param item המוצר שיש להוסיף או להסיר
+     */
     private fun toggleProduct(item: ShoppingItem) {
         val index = userShoppingList.indexOfFirst { it.title == item.title }
         if (index != -1) {
@@ -302,12 +316,14 @@ class MainActivity : AppCompatActivity() {
             userShoppingList.add(item)
             Toast.makeText(this, "המוצר נוסף לרשימת הקניות", Toast.LENGTH_SHORT).show()
         }
-
         saveUserShoppingList()
         updateViewListButton()
         applyFilter()
     }
 
+    /**
+     * מעדכן את טקסט כפתור רשימת הקניות לפי מצב הסל הנוכחי.
+     */
     private fun updateViewListButton() {
         if (userShoppingList.isEmpty()) {
             btnViewList.text = "הסל ריק - הוסף מוצרים לרשימה"
@@ -318,25 +334,39 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * מוחק מוצר מהקטלוג ומרשימת הקניות האישית.
+     * מסנכרן את השינוי עם Firestore ומרענן את הממשק.
+     *
+     * @param item המוצר למחיקה
+     */
     private fun deleteItemFromCatalog(item: ShoppingItem) {
         catalogItems.removeAll { it.title == item.title }
         userShoppingList.removeAll { it.title == item.title }
-
         visibleItemCount = pageSize
         saveCatalog()
         saveUserShoppingList()
         applyFilter()
         updateViewListButton()
-
         Toast.makeText(this, "המוצר נמחק מהקטלוג", Toast.LENGTH_SHORT).show()
     }
 
+    /**
+     * פותח את מסך עריכת המוצר ב-AdminActivity.
+     *
+     * @param item המוצר לעריכה
+     */
     private fun openEditProduct(item: ShoppingItem) {
         val intent = Intent(this, AdminActivity::class.java)
         intent.putExtra("EDIT_ITEM", item)
         startAdminActivity.launch(intent)
     }
 
+    /**
+     * פותח סרטון YouTube הקשור למוצר בדפדפן או באפליקציה חיצונית.
+     *
+     * @param url כתובת ה-URL של הסרטון
+     */
     private fun openVideo(url: String) {
         if (url.isNotEmpty()) {
             startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
@@ -345,6 +375,10 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * שומר את הקטלוג המלא ב-SharedPreferences וב-Firestore.
+     * שמירה ל-Firestore מותרת רק למשתמש Admin.
+     */
     private fun saveCatalog() {
         val gson = Gson()
         val prefs = getSharedPreferences("ShoplyPrefs", MODE_PRIVATE).edit()
@@ -365,11 +399,14 @@ class MainActivity : AppCompatActivity() {
             )
         }
 
-        db.collection("catalog")
-            .document("items")
+        db.collection("catalog").document("items")
             .set(hashMapOf("products" to catalogData))
     }
 
+    /**
+     * שומר את רשימת הקניות האישית של המשתמש המחובר.
+     * שומר לוקאלית ב-SharedPreferences וב-Firestore תחת ה-UID של המשתמש.
+     */
     private fun saveUserShoppingList() {
         val gson = Gson()
         val prefs = getSharedPreferences("ShoplyPrefs", MODE_PRIVATE).edit()
@@ -377,16 +414,18 @@ class MainActivity : AppCompatActivity() {
         prefs.apply()
 
         val uid = auth.currentUser?.uid ?: return
-
         db.collection("users").document(uid)
             .collection("shoppingList")
             .document("myList")
             .set(hashMapOf("items" to userShoppingList.map { it.title }))
     }
 
+    /**
+     * טוענת את רשימת הקניות האישית של המשתמש מ-Firestore.
+     * מסנכרנת את הרשימה עם הקטלוג הנוכחי ומעדכנת את הממשק.
+     */
     private fun loadUserShoppingList() {
         val uid = auth.currentUser?.uid ?: return
-
         db.collection("users").document(uid)
             .collection("shoppingList")
             .document("myList")
@@ -396,8 +435,7 @@ class MainActivity : AppCompatActivity() {
                 userShoppingList = catalogItems.filter { it.title in titles }.toMutableList()
 
                 val prefsEdit = getSharedPreferences("ShoplyPrefs", MODE_PRIVATE).edit()
-                val gson = Gson()
-                prefsEdit.putString("saved_user_list", gson.toJson(userShoppingList))
+                prefsEdit.putString("saved_user_list", Gson().toJson(userShoppingList))
                 prefsEdit.apply()
 
                 visibleItemCount = pageSize
@@ -411,6 +449,11 @@ class MainActivity : AppCompatActivity() {
             }
     }
 
+    /**
+     * טוענת את נתוני הקטלוג — קודם מ-SharedPreferences (מהיר),
+     * ואחר כך מ-Firestore (מעודכן).
+     * לאחר טעינת הקטלוג מ-Firestore, טוענת גם את רשימת הקניות האישית.
+     */
     private fun loadItemsFromDisk() {
         val prefs = getSharedPreferences("ShoplyPrefs", MODE_PRIVATE)
         val gson = Gson()

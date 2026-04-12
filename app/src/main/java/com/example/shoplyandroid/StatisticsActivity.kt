@@ -12,18 +12,20 @@ import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 
+/**
+ * מסך סטטיסטיקות.
+ * מציג סיכום של הקטלוג ורשימת הקניות, כולל גרף עמודות
+ * המראה את כמות המוצרים לפי קטגוריה.
+ * הנתונים נטענים מ-SharedPreferences ומעובדים בצד הלקוח (Group By).
+ */
 class StatisticsActivity : AppCompatActivity() {
 
     private var catalogItems: MutableList<ShoppingItem> = mutableListOf()
     private var userShoppingList: MutableList<ShoppingItem> = mutableListOf()
 
     private val allCategories = listOf(
-        "פירות וירקות",
-        "מוצרי חלב וביצים",
-        "ניקיון",
-        "מאפה ודגנים",
-        "שימורים ומזווה",
-        "בשר ודגים"
+        "פירות וירקות", "מוצרי חלב וביצים", "ניקיון",
+        "מאפה ודגנים", "שימורים ומזווה", "בשר ודגים"
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -40,8 +42,10 @@ class StatisticsActivity : AppCompatActivity() {
         tvTotalCatalog.text = "סה״כ מוצרים בקטלוג: ${catalogItems.size}"
         tvTotalCart.text = "סה״כ מוצרים ברשימת הקניות: ${userShoppingList.size}"
 
+        // אגרגציה בצד הלקוח — ספירת מוצרים לפי קטגוריה
         val actualCounts = catalogItems.groupingBy { it.category }.eachCount()
 
+        // שמירה על סדר הקטגוריות הקבוע גם אם קטגוריה מסוימת ריקה
         val categoryCounts = linkedMapOf<String, Int>()
         for (category in allCategories) {
             categoryCounts[category] = actualCounts[category] ?: 0
@@ -58,6 +62,13 @@ class StatisticsActivity : AppCompatActivity() {
         setupBarChart(barChart, categoryCounts)
     }
 
+    /**
+     * מגדיר ומציג גרף עמודות עם כמות המוצרים לפי קטגוריה.
+     * משתמש בספריית MPAndroidChart.
+     *
+     * @param barChart רכיב הגרף להצגה
+     * @param categoryCounts מפה של קטגוריה לכמות המוצרים בה
+     */
     private fun setupBarChart(barChart: BarChart, categoryCounts: Map<String, Int>) {
         val categories = categoryCounts.keys.toList()
         val entries = categoryCounts.values.mapIndexed { index, count ->
@@ -87,6 +98,9 @@ class StatisticsActivity : AppCompatActivity() {
         barChart.invalidate()
     }
 
+    /**
+     * טוענת את נתוני הקטלוג ורשימת הקניות מ-SharedPreferences.
+     */
     private fun loadItemsFromDisk() {
         val prefs = getSharedPreferences("ShoplyPrefs", MODE_PRIVATE)
         val gson = Gson()

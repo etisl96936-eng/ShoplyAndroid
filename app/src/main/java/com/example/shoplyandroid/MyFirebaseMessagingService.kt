@@ -10,8 +10,19 @@ import androidx.core.app.NotificationCompat
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 
+/**
+ * שירות FCM (Firebase Cloud Messaging) לקבלת Push Notifications.
+ * רץ ברקע ומאזין להודעות נכנסות מ-Firebase גם כשהאפליקציה סגורה.
+ * בעת קבלת הודעה — מציג אותה כ-Notification במכשיר.
+ */
 class MyFirebaseMessagingService : FirebaseMessagingService() {
 
+    /**
+     * נקרא כאשר מתקבלת הודעת Push מ-Firebase.
+     * מחלץ את הכותרת והתוכן ומציג אותם כהתראה.
+     *
+     * @param remoteMessage ההודעה שהתקבלה מ-Firebase
+     */
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         super.onMessageReceived(remoteMessage)
 
@@ -21,11 +32,24 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         showNotification(title, body)
     }
 
+    /**
+     * נקרא כאשר נוצר או מתחדש FCM Token למכשיר.
+     * ניתן לשמור את ה-Token ב-Firestore לצורך שליחת התראות ממוקדות למשתמש ספציפי.
+     *
+     * @param token ה-Token החדש של המכשיר
+     */
     override fun onNewToken(token: String) {
         super.onNewToken(token)
-        // אפשר לשמור את ה-token ב-Firestore אם צריך
     }
 
+    /**
+     * בונה ומציג התראה (Notification) במכשיר.
+     * יוצר Notification Channel עבור Android 8 ומעלה.
+     * לחיצה על ההתראה פותחת את MainActivity.
+     *
+     * @param title כותרת ההתראה
+     * @param body תוכן ההתראה
+     */
     private fun showNotification(title: String, body: String) {
         val channelId = "shoply_channel"
         val intent = Intent(this, MainActivity::class.java).apply {
@@ -39,6 +63,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         val notificationManager =
             getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
+        // יצירת Notification Channel נדרשת עבור Android 8.0 (Oreo) ומעלה
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 channelId,

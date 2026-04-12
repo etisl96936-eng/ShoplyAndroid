@@ -1,5 +1,6 @@
 package com.example.shoplyandroid
 
+import android.annotation.SuppressLint
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
@@ -14,6 +15,11 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
+/**
+ * מסך מיקום ומזג אוויר.
+ * מאפשר קבלת מיקום GPS נוכחי ושמירתו, ומציג נתוני מזג אוויר
+ * בזמן אמת דרך API חיצוני (Open-Meteo) באמצעות Retrofit.
+ */
 class LocationActivity : AppCompatActivity() {
 
     private lateinit var tvLocation: TextView
@@ -43,11 +49,14 @@ class LocationActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * בודק אם הרשאת מיקום ניתנה.
+     * אם כן — מקבל מיקום מיידית, אחרת — מבקש הרשאה מהמשתמש.
+     */
     private fun checkLocationPermissionAndFetch() {
         when {
             ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_FINE_LOCATION
+                this, Manifest.permission.ACCESS_FINE_LOCATION
             ) == PackageManager.PERMISSION_GRANTED -> {
                 getCurrentLocation()
             }
@@ -57,6 +66,12 @@ class LocationActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * מקבל את המיקום האחרון הידוע של המכשיר באמצעות FusedLocationProvider.
+     * שומר את הקואורדינטות ב-SharedPreferences וטוען מזג אוויר תואם.
+     * ה-annotation מדכא אזהרת הרשאה — ההרשאה נבדקת לפני קריאה לפונקציה זו.
+     */
+    @SuppressLint("MissingPermission")
     private fun getCurrentLocation() {
         val fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
@@ -86,6 +101,13 @@ class LocationActivity : AppCompatActivity() {
             }
     }
 
+    /**
+     * שולח בקשה ל-API של Open-Meteo לקבלת נתוני מזג אוויר נוכחיים.
+     * מציג טמפרטורה ומהירות רוח על המסך.
+     *
+     * @param latitude קו הרוחב של המיקום
+     * @param longitude קו האורך של המיקום
+     */
     private fun fetchWeather(latitude: Double, longitude: Double) {
         tvWeather.text = "טוען מזג אוויר..."
 
@@ -118,6 +140,10 @@ class LocationActivity : AppCompatActivity() {
             })
     }
 
+    /**
+     * טוענת מיקום שמור מ-SharedPreferences ומציגה אותו על המסך.
+     * אם קיים מיקום שמור — טוענת גם מזג אוויר מתאים.
+     */
     private fun loadSavedLocation() {
         val prefs = getSharedPreferences("ShoplyPrefs", MODE_PRIVATE)
         val lat = prefs.getString("LAST_LATITUDE", null)
