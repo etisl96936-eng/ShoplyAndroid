@@ -44,15 +44,6 @@
             app:layout_constraintStart_toStartOf="@id/itemTitle"
             app:layout_constraintTop_toBottomOf="@id/itemTitle" />
 
-        <ImageButton
-            android:id="@+id/btnPlay"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@android:drawable/ic_media_play"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="@id/itemTitle"
-            app:layout_constraintTop_toBottomOf="@id/itemDescription" />
 
         <Button
             android:id="@+id/btnAddToList"

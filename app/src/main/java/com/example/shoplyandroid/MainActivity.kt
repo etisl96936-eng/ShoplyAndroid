@@ -4,7 +4,6 @@ import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.text.Editable
@@ -120,12 +119,19 @@ class MainActivity : AppCompatActivity() {
             override fun afterTextChanged(s: Editable?) {
                 applyFilter()
             }
+
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
         })
 
         spinnerCategory.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+            override fun onItemSelected(
+                parent: AdapterView<*>?,
+                view: View?,
+                position: Int,
+                id: Long
+            ) {
                 if (suppressNextSpinnerSelection) {
                     suppressNextSpinnerSelection = false
                     return
@@ -235,7 +241,11 @@ class MainActivity : AppCompatActivity() {
         if (filteredList.isEmpty()) {
             recyclerView.visibility = View.GONE
             tvEmptyState.visibility = View.VISIBLE
-            tvEmptyState.text = if (isShowingOnlyCart) "רשימת הקניות שלך ריקה כרגע" else "לא נמצאו מוצרים"
+            tvEmptyState.text = if (isShowingOnlyCart) {
+                "רשימת הקניות שלך ריקה כרגע"
+            } else {
+                "לא נמצאו מוצרים"
+            }
         } else {
             recyclerView.visibility = View.VISIBLE
             tvEmptyState.visibility = View.GONE
@@ -254,7 +264,6 @@ class MainActivity : AppCompatActivity() {
             userShoppingList.map { it.title },
             isAdmin,
             { item -> toggleProduct(item) },
-            { url -> openVideo(url) },
             { item -> openEditProduct(item) },
             { item -> deleteItemFromCatalog(item) }
         )
@@ -302,7 +311,8 @@ class MainActivity : AppCompatActivity() {
                 Toast.makeText(this, "המוצר נמחק מהקטלוג", Toast.LENGTH_SHORT).show()
             }
             .addOnFailureListener { e ->
-                Toast.makeText(this, "שגיאה במחיקת מוצר: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, "שגיאה במחיקת מוצר: ${e.localizedMessage}", Toast.LENGTH_LONG)
+                    .show()
             }
     }
 
@@ -310,14 +320,6 @@ class MainActivity : AppCompatActivity() {
         val intent = Intent(this, AdminActivity::class.java)
         intent.putExtra("EDIT_ITEM", item)
         startAdminActivity.launch(intent)
-    }
-
-    private fun openVideo(url: String) {
-        if (url.isNotEmpty()) {
-            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-        } else {
-            Toast.makeText(this, "אין וידאו זמין", Toast.LENGTH_SHORT).show()
-        }
     }
 
     private fun saveProductToFirestore(item: ShoppingItem) {
@@ -461,7 +463,8 @@ class MainActivity : AppCompatActivity() {
             }
             .addOnFailureListener { e ->
                 isLoadingProducts = false
-                Toast.makeText(this, "שגיאה בטעינת מוצרים: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, "שגיאה בטעינת מוצרים: ${e.localizedMessage}", Toast.LENGTH_LONG)
+                    .show()
                 applyFilter()
                 updateViewListButton()
             }
@@ -508,14 +511,21 @@ class MainActivity : AppCompatActivity() {
             }
             .addOnFailureListener { e ->
                 isLoadingProducts = false
-                Toast.makeText(this, "שגיאה בטעינת מוצרים נוספים: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                Toast.makeText(
+                    this,
+                    "שגיאה בטעינת מוצרים נוספים: ${e.localizedMessage}",
+                    Toast.LENGTH_LONG
+                ).show()
             }
     }
 
     private fun updateLoadMoreVisibility() {
         val btnLoadMore = findViewById<Button>(R.id.btnLoadMore)
         btnLoadMore.visibility =
-            if (!isShowingOnlyCart && !isLastPage && catalogItems.isNotEmpty()) View.VISIBLE
-            else View.GONE
+            if (!isShowingOnlyCart && !isLastPage && catalogItems.isNotEmpty()) {
+                View.VISIBLE
+            } else {
+                View.GONE
+            }
     }
 }
