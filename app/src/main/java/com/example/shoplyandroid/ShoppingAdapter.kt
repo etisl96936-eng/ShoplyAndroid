@@ -10,6 +10,18 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 
+/**
+ * Adapter להצגת מוצרי הקטלוג ב-RecyclerView.
+ * תומך בהצגת תמונה, כותרת, תיאור והוספה לרשימת קניות.
+ * למשתמש Admin מוצגים גם כפתורי עריכה ומחיקה.
+ *
+ * @param items רשימת המוצרים להצגה
+ * @param userTitles רשימת שמות המוצרים שכבר נמצאים ברשימת הקניות של המשתמש
+ * @param isAdmin האם המשתמש הנוכחי הוא אדמין
+ * @param onClick callback בלחיצה על כפתור הוספה/הסרה מרשימת הקניות
+ * @param onLongClick callback בלחיצה ארוכה על פריט (לעריכה)
+ * @param onDeleteClick callback בלחיצה על כפתור המחיקה
+ */
 class ShoppingAdapter(
     private var items: List<ShoppingItem>,
     private val userTitles: List<String>,
@@ -19,6 +31,10 @@ class ShoppingAdapter(
     private val onDeleteClick: (ShoppingItem) -> Unit
 ) : RecyclerView.Adapter<ShoppingAdapter.ShoppingViewHolder>() {
 
+    /**
+     * ViewHolder המחזיק את רכיבי ה-UI של פריט מוצר בודד.
+     * שומר את הרכיבים בזיכרון למניעת קריאות חוזרות ל-findViewById.
+     */
     class ShoppingViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val itemTitle: TextView = view.findViewById(R.id.itemTitle)
         val itemDescription: TextView = view.findViewById(R.id.itemDescription)
@@ -33,18 +49,25 @@ class ShoppingAdapter(
         return ShoppingViewHolder(view)
     }
 
+    /**
+     * ממלא את נתוני המוצר ב-ViewHolder.
+     * טוען תמונה באמצעות Glide, מגדיר מצב כפתור הוספה לפי רשימת המשתמש,
+     * ומציג/מסתיר פקדי אדמין לפי תפקיד המשתמש.
+     */
     override fun onBindViewHolder(holder: ShoppingViewHolder, position: Int) {
         val item = items[position]
 
         holder.itemTitle.text = item.title
         holder.itemDescription.text = item.description
 
+        // טעינת תמונת המוצר מה-URL באמצעות Glide עם תמונת placeholder
         Glide.with(holder.itemView.context)
             .load(item.imageUrl)
             .placeholder(android.R.drawable.ic_menu_report_image)
             .error(item.imageRes.takeIf { it != 0 } ?: android.R.drawable.ic_menu_report_image)
             .into(holder.itemImage)
 
+        // הצגת/הסתרת פקדי ניהול לפי תפקיד המשתמש
         if (isAdmin) {
             holder.btnDelete.visibility = View.VISIBLE
             holder.itemView.setOnLongClickListener {
@@ -60,6 +83,7 @@ class ShoppingAdapter(
             holder.btnDelete.setOnClickListener(null)
         }
 
+        // שינוי מראה כפתור הוספה לפי האם המוצר כבר ברשימת הקניות
         if (userTitles.contains(item.title)) {
             holder.btnAddToList.text = "✓"
             holder.btnAddToList.setBackgroundColor(android.graphics.Color.LTGRAY)

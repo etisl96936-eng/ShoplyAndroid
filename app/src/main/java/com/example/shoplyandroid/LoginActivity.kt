@@ -22,6 +22,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
+/**
+ * מסך ההתחברות של האפליקציה.
+ * תומך בהתחברות עם אימייל וסיסמה, וכן בהתחברות עם חשבון Google.
+ * אם המשתמש כבר מחובר, מנתב ישירות למסך הראשי.
+ */
 class LoginActivity : AppCompatActivity() {
 
     private lateinit var auth: FirebaseAuth
@@ -50,6 +55,7 @@ class LoginActivity : AppCompatActivity() {
             startActivity(Intent(this, RegisterActivity::class.java))
         }
 
+        // אם המשתמש כבר מחובר — טען נתונים ועבור ישירות למסך הראשי
         if (auth.currentUser != null) {
             loadUserDataAndGoToMain()
             return
@@ -64,6 +70,10 @@ class LoginActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * מבצע התחברות עם אימייל וסיסמה.
+     * מבצע ולידציה על השדות לפני השליחה ל-Firebase Auth.
+     */
     private fun loginWithEmailPassword() {
         val email = etUsername.text.toString().trim()
         val password = etPassword.text.toString().trim()
@@ -91,14 +101,14 @@ class LoginActivity : AppCompatActivity() {
                 loadUserDataAndGoToMain()
             }
             .addOnFailureListener { e ->
-                Toast.makeText(
-                    this,
-                    "התחברות נכשלה: ${e.localizedMessage}",
-                    Toast.LENGTH_LONG
-                ).show()
+                Toast.makeText(this, "התחברות נכשלה: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
             }
     }
 
+    /**
+     * מפעיל את תהליך ההתחברות עם חשבון Google באמצעות Credential Manager.
+     * רץ ב-Coroutine על ה-Main dispatcher.
+     */
     private fun signInWithGoogle() {
         val googleIdOption = GetGoogleIdOption.Builder()
             .setFilterByAuthorizedAccounts(false)
@@ -129,9 +139,13 @@ class LoginActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * מטפל ב-Credential שהתקבל מ-Google ומעביר את ה-ID Token ל-Firebase.
+     *
+     * @param credential האישור שהתקבל מ-Credential Manager
+     */
     private fun handleGoogleCredential(credential: Credential) {
-        if (
-            credential is CustomCredential &&
+        if (credential is CustomCredential &&
             credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
         ) {
             try {
@@ -145,6 +159,11 @@ class LoginActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * מבצע אימות מול Firebase Auth באמצעות Google ID Token.
+     *
+     * @param idToken ה-Token שהתקבל מ-Google
+     */
     private fun firebaseAuthWithGoogle(idToken: String) {
         val firebaseCredential = GoogleAuthProvider.getCredential(idToken, null)
 
@@ -172,49 +191,46 @@ class LoginActivity : AppCompatActivity() {
             }
     }
 
+    /**
+     * יוצר מסמך משתמש חדש ב-Firestore אם לא קיים, או מעדכן פרטים קיימים.
+     * משתמש חדש מקבל תפקיד "user" כברירת מחדל.
+     *
+     * @param uid מזהה המשתמש ב-Firebase
+     * @param email האימייל של המשתמש
+     * @param displayName שם התצוגה של המשתמש
+     */
     private fun createOrUpdateGoogleUser(uid: String, email: String, displayName: String) {
         val userRef = db.collection("users").document(uid)
 
         userRef.get()
             .addOnSuccessListener { document ->
                 if (document.exists()) {
-                    userRef.update(
-                        mapOf(
-                            "email" to email,
-                            "displayName" to displayName
-                        )
-                    ).addOnCompleteListener {
-                        loadUserDataAndGoToMain()
-                    }
+                    // משתמש קיים — עדכון פרטים בלבד
+                    userRef.update(mapOf("email" to email, "displayName" to displayName))
+                        .addOnCompleteListener { loadUserDataAndGoToMain() }
                 } else {
+                    // משתמש חדש — יצירת מסמך עם תפקיד ברירת מחדל
                     val userData = hashMapOf(
                         "email" to email,
                         "displayName" to displayName,
                         "role" to "user"
                     )
-
                     userRef.set(userData)
-                        .addOnSuccessListener {
-                            loadUserDataAndGoToMain()
-                        }
+                        .addOnSuccessListener { loadUserDataAndGoToMain() }
                         .addOnFailureListener { e ->
-                            Toast.makeText(
-                                this,
-                                "שמירת משתמש נכשלה: ${e.localizedMessage}",
-                                Toast.LENGTH_LONG
-                            ).show()
+                            Toast.makeText(this, "שמירת משתמש נכשלה: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
                         }
                 }
             }
             .addOnFailureListener { e ->
-                Toast.makeText(
-                    this,
-                    "קריאת נתוני משתמש נכשלה: ${e.localizedMessage}",
-                    Toast.LENGTH_LONG
-                ).show()
+                Toast.makeText(this, "קריאת נתוני משתמש נכשלה: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
             }
     }
 
+    /**
+     * טוען את נתוני המשתמש המחובר מ-Firestore (תפקיד ושם תצוגה)
+     * ושומר אותם ב-SharedPreferences לפני המעבר למסך הראשי.
+     */
     private fun loadUserDataAndGoToMain() {
         val currentUser = auth.currentUser
         val uid = currentUser?.uid
@@ -225,9 +241,7 @@ class LoginActivity : AppCompatActivity() {
             return
         }
 
-        db.collection("users")
-            .document(uid)
-            .get()
+        db.collection("users").document(uid).get()
             .addOnSuccessListener { doc ->
                 val role = doc.getString("role") ?: "user"
                 val displayName = doc.getString("displayName") ?: ""
@@ -241,6 +255,7 @@ class LoginActivity : AppCompatActivity() {
                 goToMain()
             }
             .addOnFailureListener {
+                // במקרה של כשל — ברירת מחדל: משתמש רגיל
                 val prefs = getSharedPreferences("ShoplyPrefs", MODE_PRIVATE).edit()
                 prefs.putBoolean("IS_ADMIN", false)
                 prefs.putString("USERNAME", email)
@@ -251,6 +266,9 @@ class LoginActivity : AppCompatActivity() {
             }
     }
 
+    /**
+     * מנווט למסך הראשי וסוגר את מסך ההתחברות.
+     */
     private fun goToMain() {
         startActivity(Intent(this, MainActivity::class.java))
         finish()
